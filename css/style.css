@@ -1,0 +1,182 @@
+/* ===== 腹膜透析健康日记 全局样式 ===== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #1e88e5;
+  --primary-dark: #1565c0;
+  --danger: #e53935;
+  --bg: #f2f5f9;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #8a94a6;
+  --border: #e5eaf0;
+  --radius: 14px;
+  --shadow: 0 2px 10px rgba(30,90,180,.08);
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* 顶部 */
+.app-header {
+  position: sticky;
+  top: 0; z-index: 10;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  padding: 16px 18px 14px;
+  box-shadow: var(--shadow);
+}
+.app-title { font-size: 19px; font-weight: 600; }
+.app-date { font-size: 13px; opacity: .9; margin-top: 2px; }
+
+/* 内容区 */
+.app-main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 14px 14px 90px;
+}
+
+/* 页面切换 */
+.page { display: none; }
+.page.active { display: block; }
+
+/* 卡片 */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.card-head {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 4px solid var(--primary);
+}
+.pd-summary {
+  background: #e8f3ff;
+  color: var(--primary-dark);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.pd-summary strong { font-size: 18px; }
+
+/* 表单 */
+.entry-form { margin-bottom: 6px; }
+.row { display: flex; gap: 10px; margin-bottom: 12px; }
+.row > label { flex: 1; }
+.row-note { color: var(--muted); font-size: 12px; margin: -6px 0 10px; }
+label { display: block; color: #4b5563; font-size: 13px; }
+label span { color: var(--muted); font-weight: normal; margin-left: 4px; font-size: 12px; }
+input, select, textarea {
+  width: 100%;
+  margin-top: 5px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  background: #fbfcfe;
+  outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+
+/* 按钮 */
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background .15s;
+}
+.btn:hover { background: var(--primary-dark); }
+.btn.ghost {
+  background: #eef3f8;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+}
+
+/* 列表 */
+.list { list-style: none; }
+.list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.list li:last-child { border-bottom: none; }
+.item-main { flex: 1; }
+.item-title { font-weight: 600; }
+.item-sub { color: var(--muted); font-size: 12px; }
+.item-del {
+  border: none; background: none;
+  color: var(--danger);
+  font-size: 13px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.item-del:hover { color: #b71c1c; }
+
+/* 底部导航 */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #fff;
+  display: flex;
+  border-top: 1px solid var(--border);
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+}
+.nav-item {
+  flex: 1;
+  border: none; background: none;
+  padding: 8px 0;
+  font-size: 15px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.nav-item.active { color: var(--primary); font-weight: 600; }
+
+/* 提示 */
+.toast {
+  position: fixed;
+  bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(17,24,39,.9);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all .25s;
+  z-index: 100;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* 图表 */
+#statChart { margin-top: 6px; }
+.chart-note { color: var(--muted); font-size: 13px; text-align: center; margin-top: 10px; }
+
+/* 空列表提示 */
+.empty { color: var(--muted); font-size: 13px; text-align: center; padding: 12px 0; }

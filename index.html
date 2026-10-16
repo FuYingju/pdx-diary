@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1e88e5">
+<title>腹膜透析健康日记</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1 class="app-title">腹膜透析健康日记</h1>
+  <div class="app-date" id="todayText"></div>
+</header>
+
+<main class="app-main">
+  <!-- ========== 今日记录 ========== -->
+  <section class="page active" id="page-daily">
+    <div class="card">
+      <div class="card-head">血压</div>
+      <form class="entry-form" id="bpForm">
+        <div class="row">
+          <label>日期<input type="date" id="bpDate" required></label>
+          <label>时间<input type="time" id="bpTime" required></label>
+        </div>
+        <div class="row">
+          <label>高压<span>收缩压</span><input type="number" id="bpHigh" placeholder="例如 120" min="0" required></label>
+          <label>低压<span>舒张压</span><input type="number" id="bpLow" placeholder="例如 80" min="0" required></label>
+          <label>心率<span>次/分</span><input type="number" id="bpPulse" placeholder="例如 70" min="0"></label>
+        </div>
+        <button type="submit" class="btn">保存血压</button>
+      </form>
+      <ul class="list" id="bpList"></ul>
+    </div>
+
+    <div class="card">
+      <div class="card-head">体重</div>
+      <form class="entry-form" id="weightForm">
+        <div class="row">
+          <label>日期<input type="date" id="weightDate" required></label>
+          <label>体重<span>公斤</span><input type="number" id="weightValue" placeholder="例如 62.5" min="0" step="0.1" required></label>
+        </div>
+        <button type="submit" class="btn">保存体重</button>
+      </form>
+      <ul class="list" id="weightList"></ul>
+    </div>
+
+    <div class="card">
+      <div class="card-head">腹透超滤（按袋记）</div>
+      <div class="pd-summary">今日合计超滤：<strong id="pdTotalText">0</strong> ml</div>
+      <form class="entry-form" id="pdForm">
+        <div class="row">
+          <label>日期<input type="date" id="pdDate" required></label>
+          <label>时间<input type="time" id="pdTime" required></label>
+        </div>
+        <div class="row">
+          <label>入液量<span>ml</span><input type="number" id="pdIn" placeholder="例如 2000" min="0" required></label>
+          <label>出液量<span>ml</span><input type="number" id="pdOut" placeholder="例如 2100" min="0" required></label>
+        </div>
+        <div class="row-note"><span>本袋超滤 = 出液 − 入液，自动计算</span></div>
+        <button type="submit" class="btn">保存本袋</button>
+      </form>
+      <ul class="list" id="pdList"></ul>
+    </div>
+  </section>
+
+  <!-- ========== 正在吃的药 ========== -->
+  <section class="page" id="page-meds">
+    <div class="card">
+      <div class="card-head">我正在吃的药（维护这份清单即可，不用天天记）</div>
+      <form class="entry-form" id="medForm">
+        <label>药名<input type="text" id="medName" placeholder="例如 百令胶囊" required></label>
+        <label>剂量<input type="text" id="medDose" placeholder="例如 0.5g" required></label>
+        <label>怎么吃(次数/时间)<input type="text" id="medTimes" placeholder="例如 每次2粒，早晚各1次"></label>
+        <button type="submit" class="btn">＋ 添加药物</button>
+      </form>
+      <ul class="list" id="medList"></ul>
+    </div>
+  </section>
+
+  <!-- ========== 身体不适 ========== -->
+  <section class="page" id="page-symptoms">
+    <div class="card">
+      <div class="card-head">身体不适记录（不舒服时记一下）</div>
+      <form class="entry-form" id="symptomForm">
+        <div class="row">
+          <label>日期<input type="date" id="symDate" required></label>
+          <label>时间<input type="time" id="symTime" required></label>
+        </div>
+        <label>哪里不舒服、什么感觉<input type="text" id="symDesc" placeholder="例如 头晕、恶心、肚子胀" required></label>
+        <label>备注（可选）<textarea id="symNote" rows="2" placeholder="想说点啥就写这里"></textarea></label>
+        <button type="submit" class="btn">保存不适记录</button>
+      </form>
+      <ul class="list" id="symList"></ul>
+    </div>
+  </section>
+
+  <!-- ========== 统计报表 ========== -->
+  <section class="page" id="page-stats">
+    <div class="card">
+      <div class="card-head">统计报表</div>
+      <div class="row">
+        <label>指标
+          <select id="statMetric">
+            <option value="bp">血压</option>
+            <option value="weight">体重</option>
+            <option value="pd">超滤量</option>
+          </select>
+        </label>
+        <label>时间范围
+          <select id="statRange">
+            <option value="7">近 7 天</option>
+            <option value="30" selected>近 30 天</option>
+            <option value="90">近 90 天</option>
+            <option value="all">全部</option>
+          </select>
+        </label>
+      </div>
+      <canvas id="statChart"></canvas>
+      <div class="chart-note" id="statNote"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" data-page="daily">记录</button>
+  <button class="nav-item" data-page="meds">用药</button>
+  <button class="nav-item" data-page="symptoms">不适</button>
+  <button class="nav-item" data-page="stats">统计</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/chart.umd.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+}
+</script>
+</body>
+</html>
