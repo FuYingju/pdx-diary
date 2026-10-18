@@ -68,9 +68,12 @@
   }
 
   async function loadDaily() {
+    // 列表跟随各自日期选择器：切到哪天就看哪天的记录
+    const bpD = $('bpDate').value || TODAY;
+    const wD = $('weightDate').value || TODAY;
     const [bp, weight] = await Promise.all([
-      DB.getByDate('bp', TODAY),
-      DB.getByDate('weight', TODAY),
+      DB.getByDate('bp', bpD),
+      DB.getByDate('weight', wD),
     ]);
 
     bp.sort((a, b) => a.time.localeCompare(b.time));
@@ -115,10 +118,16 @@
     loadDaily();
   });
 
+  // 切换日期时重新加载对应日期的记录
+  $('bpDate').addEventListener('change', loadDaily);
+  $('weightDate').addEventListener('change', loadDaily);
+
   // ---- 身体不适（记录页）----
   async function loadSymptoms() {
-    const list = await DB.getAll('symptom');
-    list.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+    // 列表跟随日期选择器：切到哪天就看哪天的记录
+    const d = $('symDate').value || TODAY;
+    const list = await DB.getByDate('symptom', d);
+    list.sort((a, b) => a.time.localeCompare(b.time));
     renderList($('symList'), list, (x) => `
       <div class="item-main">
         <div class="item-title">${esc(x.desc)}</div>
@@ -137,9 +146,14 @@
     loadSymptoms();
   });
 
+  // 切换日期时重新加载对应日期的记录
+  $('symDate').addEventListener('change', loadSymptoms);
+
   // ---- 腹透超滤（独立页）----
   async function loadPd() {
-    const pd = await DB.getByDate('pd', TODAY);
+    // 列表与合计跟随日期选择器
+    const d = $('pdDate').value || TODAY;
+    const pd = await DB.getByDate('pd', d);
     pd.sort((a, b) => a.time.localeCompare(b.time));
     const total = pd.reduce((s, x) => s + (x.net ?? 0), 0);
     $('pdTotalText').textContent = total;
@@ -161,6 +175,9 @@
     $('pdForm').reset(); fillDefaults();
     loadPd();
   });
+
+  // 切换日期时重新加载对应日期的记录与合计
+  $('pdDate').addEventListener('change', loadPd);
 
   // ---- 用药清单 ----
   const MED_TITLE_KEY = 'medTitle';
@@ -220,6 +237,15 @@
     return fmtDate(d);
   }
 
+  // 按数据范围自动缩放 y 轴（不强制从 0 开始），放大波动差异
+  function autoScale(values, minPad) {
+    const nums = values.filter((v) => v != null);
+    if (!nums.length) return {};
+    const min = Math.min(...nums), max = Math.max(...nums);
+    const pad = Math.max((max - min) * 0.2, minPad);
+    return { min: Math.floor(min - pad), max: Math.ceil(max + pad) };
+  }
+
   async function renderStat() {
     if (!window.Chart) { $('statNote').textContent = '图表组件未加载，请联网后重试'; return; }
     const metric = $('statMetric').value;
@@ -248,20 +274,27 @@
     if (metric === 'bp') {
       if (!points.length) { $('statNote').textContent = '该范围内暂无血压记录'; return; }
       const hasPulse = points.some((r) => r.pulse != null);
+      const highs = points.map((r) => r.high);
+      const lows = points.map((r) => r.low);
+      const pulses = hasPulse ? points.map((r) => r.pulse) : [];
+      // 双 y 轴：高压/低压共用左侧 mmHg 轴，心率用右侧 次/分 轴，均按数据范围自动缩放
+      const yScale = autoScale([...highs, ...lows], 10);
+      const y1Scale = hasPulse ? autoScale(pulses, 5) : {};
       chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: points.map(xLabel),
           datasets: [
-            { label: '高压 (mmHg)', data: points.map((r) => r.high), borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            { label: '低压 (mmHg)', data: points.map((r) => r.low), borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            ...(hasPulse ? [{ label: '心率 (次/分)', data: points.map((r) => r.pulse), borderColor: '#8e24aa', backgroundColor: 'transparent', tension: 0.3, spanGaps: true }] : []),
+            { label: '高压 (mmHg)', data: highs, borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
+            { label: '低压 (mmHg)', data: lows, borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
+            ...(hasPulse ? [{ label: '心率 (次/分)', data: pulses, borderColor: '#8e24aa', backgroundColor: 'transparent', tension: 0.3, spanGaps: true, yAxisID: 'y1' }] : []),
           ],
         },
         options: {
           responsive: true, spanGaps: true,
           scales: {
-            y: {},
+            y: Object.assign({}, yScale),
+            y1: Object.assign({ position: 'right', grid: { drawOnChartArea: false } }, y1Scale),
             x: { ticks: { maxTicksLimit: isToday ? 12 : 10, maxRotation: 45, autoSkip: true } },
           },
           plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
