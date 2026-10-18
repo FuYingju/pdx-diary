@@ -180,18 +180,6 @@
   $('pdDate').addEventListener('change', loadPd);
 
   // ---- 用药清单 ----
-  const MED_TITLE_KEY = 'medTitle';
-  // 用药清单标题可自定义，默认提示文字，用户可改为"降压药""降磷药"等
-  function loadMedTitle() {
-    $('medTitleInput').value = localStorage.getItem(MED_TITLE_KEY) || '我的用药';
-  }
-  $('medTitleInput').addEventListener('change', () => {
-    const v = $('medTitleInput').value.trim();
-    if (!v) { loadMedTitle(); toast('标题不能为空'); return; }
-    localStorage.setItem(MED_TITLE_KEY, v);
-    toast('标题已更新');
-  });
-
   // 用药详情视图当前查看的药物
   let curMed = null;
 
@@ -442,6 +430,5 @@
   loadDaily();
   loadPd();
   loadMeds();
-  loadMedTitle();
   loadSymptoms();
 })();

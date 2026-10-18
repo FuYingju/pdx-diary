@@ -181,26 +181,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 /* 空列表提示 */
 .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 12px 0; }
 
-/* 用药清单标题（可自定义编辑） */
-.med-title-input {
-  width: 100%;
-  border: none;
-  background: none;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 12px;
-  padding: 6px 8px 6px 10px;
-  border-left: 4px solid var(--primary);
-  border-radius: 6px;
-}
-.med-title-input:focus {
-  outline: none;
-  background: #fbfcfe;
-  border: 1px solid var(--primary);
-  border-left: 4px solid var(--primary);
-}
-
 /* 药盒封面大图与无图占位 */
 .med-card-img, .med-detail-cover img {
   width: 100%;
