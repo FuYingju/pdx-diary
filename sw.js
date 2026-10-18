@@ -3,12 +3,12 @@
  * 让应用包可以离线使用，并支持“添加到主屏幕”后像 App 一样打开。
  * 缓存策略：网络优先——在线时始终获取最新版本，断网时回退本地缓存。
  */
-const CACHE = 'pdx-diary-v4';
+const CACHE = 'pdx-diary-v5';
 const ASSETS = [
   'index.html',
-  'css/style.css?v=20261018b',
-  'js/db.js?v=20261018b',
-  'js/app.js?v=20261018b',
+  'css/style.css?v=20261018c',
+  'js/db.js?v=20261018c',
+  'js/app.js?v=20261018c',
   'js/chart.umd.min.js',
   'icons/icon-192.png',
   'icons/icon-512.png',

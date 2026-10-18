@@ -183,7 +183,7 @@
   const MED_TITLE_KEY = 'medTitle';
   // 用药清单标题可自定义，默认提示文字，用户可改为"降压药""降磷药"等
   function loadMedTitle() {
-    $('medTitleInput').value = localStorage.getItem(MED_TITLE_KEY) || '我正在吃的药（维护这份清单即可，不用天天记）';
+    $('medTitleInput').value = localStorage.getItem(MED_TITLE_KEY) || '我的用药';
   }
   $('medTitleInput').addEventListener('change', () => {
     const v = $('medTitleInput').value.trim();
@@ -211,7 +211,7 @@
       card.innerHTML = x.cover
         ? `<img class="med-card-img" src="${x.cover}" alt="药盒">`
         : `<div class="med-card-img med-card-noimg">${esc(x.name.trim().slice(0, 1))}</div>`;
-      card.innerHTML += `<div class="med-card-name">${esc(x.name)}</div>`;
+      card.innerHTML += `<div class="med-card-name">${esc(x.name)}</div>${x.category ? `<div class="med-card-tag">${esc(x.category)}</div>` : ''}`;
       card.addEventListener('click', () => showMedDetail(x));
       grid.appendChild(card);
     });
@@ -224,6 +224,7 @@
       ? `<img src="${x.cover}" alt="药盒">`
       : `<div class="med-detail-noimg">${esc(x.name.trim().slice(0, 1))}</div>`;
     $('medDetailName').textContent = x.name;
+    $('medDetailCat').innerHTML = x.category ? `<span class="med-detail-tag">${esc(x.category)}</span>` : '';
     $('medDetailInfo').innerHTML = `
       <div class="med-detail-row"><span>剂量</span><b>${esc(x.dose) || '未填写'}</b></div>
       <div class="med-detail-row"><span>怎么吃</span><b>${esc(x.times) || '未填写'}</b></div>
@@ -243,10 +244,18 @@
 
   $('medBackBtn').addEventListener('click', hideMedDetail);
 
+  // 新增药品：展开/收起添加表单
+  $('medAddBtn').addEventListener('click', () => {
+    const f = $('medForm');
+    f.hidden = !f.hidden;
+    if (!f.hidden) $('medName').focus();
+  });
+
   // 编辑：把当前药的信息预填进编辑表单
   $('medEditBtn').addEventListener('click', () => {
     if (!curMed) return;
     $('medEName').value = curMed.name;
+    $('medECategory').value = curMed.category || '';
     $('medEDose').value = curMed.dose || '';
     $('medEPrice').value = curMed.price !== '' ? curMed.price : '';
     $('medETimes').value = curMed.times || '';
@@ -271,6 +280,7 @@
     await DB.update('meds', {
       id: curMed.id,
       name: $('medEName').value.trim(),
+      category: $('medECategory').value.trim(),
       dose: $('medEDose').value.trim(),
       times: $('medETimes').value.trim(),
       price: price !== '' ? price : '',
@@ -305,6 +315,7 @@
     const price = $('medPrice').value;
     await DB.add('meds', {
       name: $('medName').value.trim(),
+      category: $('medCategory').value.trim(),
       dose: $('medDose').value.trim(),
       times: $('medTimes').value.trim(),
       price: price !== '' ? price : '',
@@ -312,6 +323,7 @@
     });
     toast('已添加药物');
     $('medForm').reset();
+    $('medForm').hidden = true;
     loadMeds();
   });
 
