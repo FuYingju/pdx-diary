@@ -1,8 +1,9 @@
 /**
  * Service Worker
  * 让应用包可以离线使用，并支持“添加到主屏幕”后像 App 一样打开。
+ * 缓存策略：网络优先——在线时始终获取最新版本，断网时回退本地缓存。
  */
-const CACHE = 'pdx-diary-v1';
+const CACHE = 'pdx-diary-v2';
 const ASSETS = [
   'index.html',
   'css/style.css',
@@ -17,6 +18,9 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
       .then((c) => c.addAll(ASSETS))
+      // 清理旧版本缓存，避免旧文件残留
+      .then(() => caches.keys())
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.skipWaiting())
   );
 });
@@ -25,16 +29,15 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(self.clients.claim());
 });
 
-// 优先使用缓存，未命中的请求网络资源并回写缓存
+// 网络优先：在线时始终拿最新版，断网时回退本地缓存
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request).then((res) => {
+    fetch(e.request)
+      .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
         return res;
-      });
-    })
+      })
+      .catch(() => caches.match(e.request))
   );
 });
