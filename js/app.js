@@ -192,17 +192,105 @@
     toast('标题已更新');
   });
 
+  // 用药详情视图当前查看的药物
+  let curMed = null;
+
+  // 主界面：一页一个药的大卡片
   async function loadMeds() {
     const meds = await DB.getAll('meds');
-    renderList($('medList'), meds, (x) => `
-      ${x.cover ? `<div class="item-cover"><img src="${x.cover}" alt="药盒"></div>` : ''}
-      <div class="item-main">
-        <div class="item-title">${esc(x.name)} <span style="font-weight:normal;color:${esc(x.dose) ? '' : 'var(--muted)'}">${esc(x.dose)}</span></div>
-        <div class="item-sub">${esc(x.times) || '次数待定'}${x.price != null && x.price !== '' ? `　｜　价格 ${esc(x.price)} 元` : ''}</div>
-      </div>
-      <button class="item-del" data-id="${x.id}">删</button>`);
-    onDelete($('medList'), 'meds', loadMeds);
+    const grid = $('medGrid');
+    grid.innerHTML = '';
+    if (!meds.length) {
+      grid.innerHTML = '<div class="empty">还没有药，先在上方添加一个吧</div>';
+      return;
+    }
+    meds.forEach((x) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'med-card';
+      card.innerHTML = x.cover
+        ? `<img class="med-card-img" src="${x.cover}" alt="药盒">`
+        : `<div class="med-card-img med-card-noimg">${esc(x.name.trim().slice(0, 1))}</div>`;
+      card.innerHTML += `<div class="med-card-name">${esc(x.name)}</div>`;
+      card.addEventListener('click', () => showMedDetail(x));
+      grid.appendChild(card);
+    });
   }
+
+  // 点击药卡片，进入详情视图
+  function showMedDetail(x) {
+    curMed = x;
+    $('medDetailCover').innerHTML = x.cover
+      ? `<img src="${x.cover}" alt="药盒">`
+      : `<div class="med-detail-noimg">${esc(x.name.trim().slice(0, 1))}</div>`;
+    $('medDetailName').textContent = x.name;
+    $('medDetailInfo').innerHTML = `
+      <div class="med-detail-row"><span>剂量</span><b>${esc(x.dose) || '未填写'}</b></div>
+      <div class="med-detail-row"><span>怎么吃</span><b>${esc(x.times) || '未填写'}</b></div>
+      <div class="med-detail-row"><span>价格</span><b>${x.price !== '' ? esc(x.price) + ' 元' : '未填写'}</b></div>`;
+    $('medDetailInfo').hidden = false;
+    $('medEditForm').hidden = true;
+    $('medGrid').hidden = true;
+    $('medForm').closest('.card').hidden = true;
+    $('medDetail').hidden = false;
+  }
+
+  function hideMedDetail() {
+    $('medDetail').hidden = true;
+    $('medGrid').hidden = false;
+    $('medForm').closest('.card').hidden = false;
+  }
+
+  $('medBackBtn').addEventListener('click', hideMedDetail);
+
+  // 编辑：把当前药的信息预填进编辑表单
+  $('medEditBtn').addEventListener('click', () => {
+    if (!curMed) return;
+    $('medEName').value = curMed.name;
+    $('medEDose').value = curMed.dose || '';
+    $('medEPrice').value = curMed.price !== '' ? curMed.price : '';
+    $('medETimes').value = curMed.times || '';
+    $('medECover').value = '';
+    $('medDetailInfo').hidden = true;
+    $('medEditForm').hidden = false;
+  });
+
+  // 保存修改
+  $('medEditForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = $('medECover').files[0];
+    let cover = curMed.cover || '';
+    if (file) {
+      cover = await new Promise((resolve) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.readAsDataURL(file);
+      });
+    }
+    const price = $('medEPrice').value;
+    await DB.update('meds', {
+      id: curMed.id,
+      name: $('medEName').value.trim(),
+      dose: $('medEDose').value.trim(),
+      times: $('medETimes').value.trim(),
+      price: price !== '' ? price : '',
+      cover,
+    });
+    toast('已保存修改');
+    hideMedDetail();
+    loadMeds();
+  });
+
+  // 删除当前药
+  $('medDelBtn').addEventListener('click', async () => {
+    if (!curMed) return;
+    if (!confirm(`确定删除「${curMed.name}」吗？`)) return;
+    await DB.remove('meds', curMed.id);
+    toast('已删除');
+    hideMedDetail();
+    loadMeds();
+  });
+
   $('medForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const file = $('medCover').files[0];

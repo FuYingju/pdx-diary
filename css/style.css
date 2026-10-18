@@ -201,18 +201,68 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
   border-left: 4px solid var(--primary);
 }
 
-/* 药盒封面缩略图 */
-.item-cover {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: #eef3f8;
-}
-.item-cover img {
+/* 药盒封面大图与无图占位 */
+.med-card-img, .med-detail-cover img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  object-fit: contain;
+  background: #fbfcfe;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.med-card-img { height: 240px; }
+.med-detail-cover img { max-height: 320px; }
+.med-card-noimg, .med-detail-noimg {
+  color: var(--muted);
+  font-weight: 600;
+}
+.med-card-noimg { font-size: 64px; }
+.med-detail-noimg {
+  height: 200px;
+  font-size: 72px;
+}
+
+/* 用药大卡片（一页一个药） */
+#medGrid { margin-bottom: 14px; }
+.med-card {
+  display: block;
+  width: 100%;
+  border: none;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  margin-bottom: 14px;
+  text-align: center;
+  cursor: pointer;
+}
+.med-card-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* 用药详情视图 */
+.med-detail-name {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  margin: 14px 0 6px;
+}
+.med-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+.med-detail-row span { color: var(--muted); }
+.med-detail-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.med-detail-actions .btn { margin-top: 0; flex: 1; }
+.btn.danger { background: var(--danger); }
+.btn.danger:hover { background: #b71c1c; }

@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=20261018">
+<link rel="stylesheet" href="css/style.css?v=20261018b">
 </head>
 <body>
 
@@ -72,13 +72,35 @@
       <input class="med-title-input" id="medTitleInput" value="我正在吃的药（维护这份清单即可，不用天天记）">
       <form class="entry-form" id="medForm">
         <label>药名<input type="text" id="medName" placeholder="例如 百令胶囊" required></label>
-        <label>剂量<input type="text" id="medDose" placeholder="例如 0.5g" required></label>
-        <label>价格（元）<input type="number" id="medPrice" placeholder="例如 45.5" min="0" step="0.01"></label>
-        <label>怎么吃(次数/时间)<input type="text" id="medTimes" placeholder="例如 每次2粒，早晚各1次"></label>
+        <label>剂量<input type="text" id="medDose" placeholder="例如 0.5g（可不填）"></label>
+        <label>价格（元）<input type="number" id="medPrice" placeholder="例如 45.5（可不填）" min="0" step="0.01"></label>
+        <label>怎么吃(次数/时间)<input type="text" id="medTimes" placeholder="例如 每次2粒，早晚各1次（可不填）"></label>
         <label>药盒封面<input type="file" id="medCover" accept="image/*"></label>
         <button type="submit" class="btn">＋ 添加药物</button>
       </form>
-      <ul class="list" id="medList"></ul>
+    </div>
+
+    <!-- 主界面：一页一个药的大卡片 -->
+    <div id="medGrid"></div>
+
+    <!-- 详情视图：点击药卡片进入 -->
+    <div class="card med-detail" id="medDetail" hidden>
+      <div class="med-detail-cover" id="medDetailCover"></div>
+      <div class="med-detail-name" id="medDetailName"></div>
+      <div class="med-detail-info" id="medDetailInfo"></div>
+      <form class="entry-form" id="medEditForm" hidden>
+        <label>药名<input type="text" id="medEName" required></label>
+        <label>剂量<input type="text" id="medEDose" placeholder="例如 0.5g（可不填）"></label>
+        <label>价格（元）<input type="number" id="medEPrice" placeholder="例如 45.5（可不填）" min="0" step="0.01"></label>
+        <label>怎么吃(次数/时间)<input type="text" id="medETimes" placeholder="例如 每次2粒，早晚各1次（可不填）"></label>
+        <label>换药盒照片<input type="file" id="medECover" accept="image/*"></label>
+        <button type="submit" class="btn">保存修改</button>
+      </form>
+      <div class="med-detail-actions">
+        <button class="btn ghost" id="medBackBtn">返回</button>
+        <button class="btn ghost" id="medEditBtn">编辑</button>
+        <button class="btn danger" id="medDelBtn">删除这个药</button>
+      </div>
     </div>
   </section>
 
@@ -141,8 +163,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
-<script src="js/db.js?v=20261018"></script>
-<script src="js/app.js?v=20261018"></script>
+<script src="js/db.js?v=20261018b"></script>
+<script src="js/app.js?v=20261018b"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

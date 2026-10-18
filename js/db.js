@@ -58,6 +58,17 @@ window.DB = (() => {
     });
   }
 
+  // 按 id 更新一条记录（对象必须带 id 字段，其余字段整体覆盖）
+  async function update(store, obj) {
+    const db = await conn();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      tx.objectStore(store).put(obj);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
   // 读取某个表的全部记录（按 id 升序）
   async function getAll(store) {
     const db = await conn();
@@ -79,5 +90,5 @@ window.DB = (() => {
     });
   }
 
-  return { add, remove, getAll, getByDate };
+  return { add, update, remove, getAll, getByDate };
 })();
