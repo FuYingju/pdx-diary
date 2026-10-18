@@ -178,6 +178,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 #statChart { margin-top: 6px; }
 .chart-note { color: var(--muted); font-size: 13px; text-align: center; margin-top: 10px; }
 
+/* 统计明细表格：长列表在容器内滚动，避免页面过长 */
+.stat-table-wrap { max-height: 320px; overflow: auto; margin-top: 12px; -webkit-overflow-scrolling: touch; }
+.stat-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.stat-table th, .stat-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.stat-table th { color: var(--muted); font-size: 13px; font-weight: 600; position: sticky; top: 0; background: #fff; }
+.stat-table td { color: var(--text); }
+.stat-table td:first-child { color: var(--muted); font-size: 13px; }
+
 /* 空列表提示 */
 .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 12px 0; }
 

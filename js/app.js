@@ -340,6 +340,15 @@
     return { min: Math.floor(min - pad), max: Math.ceil(max + pad) };
   }
 
+  // 统计明细表格：仅日期时间、数据两列，展示统计范围内全部记录
+  function buildStatTable(rows, fmt) {
+    const box = $('statTable');
+    if (!rows.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<table class="stat-table"><thead><tr><th>日期时间</th><th>数据</th></tr></thead><tbody>' +
+      rows.map((r) => `<tr><td>${esc(r.date)} ${esc(r.time)}</td><td>${fmt(r)}</td></tr>`).join('') +
+      '</tbody></table>';
+  }
+
   async function renderStat() {
     if (!window.Chart) { $('statNote').textContent = '图表组件未加载，请联网后重试'; return; }
     const metric = $('statMetric').value;
@@ -352,6 +361,7 @@
 
     if (chart) { chart.destroy(); chart = null; }
     $('statNote').textContent = '';
+    $('statTable').innerHTML = '';
     const ctx = $('statChart').getContext('2d');
 
     // x 轴标签：当天显示 时:分；其他范围按 年-月-日，取每日最新一条
@@ -394,6 +404,8 @@
           plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
         },
       });
+      // 血压明细表：高压/低压，有心率则附上
+      buildStatTable(rows, (r) => `${esc(r.high)}/${esc(r.low)} mmHg${r.pulse != null ? `｜心率 ${esc(r.pulse)}` : ''}`);
     } else if (metric === 'weight') {
       if (!points.length) { $('statNote').textContent = '该范围内暂无体重记录'; return; }
       chart = new Chart(ctx, {
@@ -408,6 +420,8 @@
           plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
         },
       });
+      // 体重明细表
+      buildStatTable(rows, (r) => `${esc(r.weight)} kg`);
     } else { // pd 每日超滤合计
       const map = new Map();
       rows.forEach((r) => map.set(r.date, (map.get(r.date) || 0) + (r.net || 0)));
@@ -425,6 +439,8 @@
           plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
         },
       });
+      // 超滤明细表：每袋净超滤，正数带 + 号
+      buildStatTable(rows, (r) => `${r.net >= 0 ? '+' : ''}${esc(r.net)} ml`);
     }
   }
 

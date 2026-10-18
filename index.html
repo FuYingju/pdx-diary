@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=20261018f">
+<link rel="stylesheet" href="css/style.css?v=20261018g">
 </head>
 <body>
 
@@ -155,6 +155,8 @@
       </div>
       <canvas id="statChart"></canvas>
       <div class="chart-note" id="statNote"></div>
+      <!-- 明细数据表格：折线图下方，显示统计范围内全部记录 -->
+      <div class="stat-table-wrap" id="statTable"></div>
     </div>
   </section>
 </main>
@@ -169,8 +171,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
-<script src="js/db.js?v=20261018f"></script>
-<script src="js/app.js?v=20261018f"></script>
+<script src="js/db.js?v=20261018g"></script>
+<script src="js/app.js?v=20261018g"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
