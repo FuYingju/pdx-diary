@@ -239,6 +239,12 @@
     if (!f.hidden) $('medName').focus();
   });
 
+  // 取消新增：收起表单并清空已填内容
+  $('medCancelBtn').addEventListener('click', () => {
+    $('medForm').reset();
+    $('medForm').hidden = true;
+  });
+
   // 编辑：把当前药的信息预填进编辑表单
   $('medEditBtn').addEventListener('click', () => {
     if (!curMed) return;

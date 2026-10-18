@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=20261018e">
+<link rel="stylesheet" href="css/style.css?v=20261018f">
 </head>
 <body>
 
@@ -77,7 +77,10 @@
         <label>价格（元）<input type="number" id="medPrice" placeholder="例如 45.5" min="0" step="0.01"></label>
         <label>怎么吃(次数/时间)<input type="text" id="medTimes" placeholder="例如 每次2粒，早晚各1次"></label>
         <label>药盒封面<input type="file" id="medCover" accept="image/*"></label>
-        <button type="submit" class="btn">保存</button>
+        <div class="med-form-actions">
+          <button type="submit" class="btn">保存</button>
+          <button type="button" class="btn ghost" id="medCancelBtn">取消</button>
+        </div>
       </form>
     </div>
 
@@ -166,8 +169,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
-<script src="js/db.js?v=20261018e"></script>
-<script src="js/app.js?v=20261018e"></script>
+<script src="js/db.js?v=20261018f"></script>
+<script src="js/app.js?v=20261018f"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

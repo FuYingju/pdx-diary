@@ -266,6 +266,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
   gap: 10px;
   margin-top: 14px;
 }
-.med-detail-actions .btn { margin-top: 0; flex: 1; }
+.med-detail-actions .btn { margin: 0; flex: 1; }
 .btn.danger { background: var(--danger); }
 .btn.danger:hover { background: #b71c1c; }
+
+/* 新增药品表单的保存/取消按钮并排 */
+.med-form-actions { display: flex; gap: 10px; margin-top: 4px; }
+.med-form-actions .btn { margin: 0; flex: 1; }
