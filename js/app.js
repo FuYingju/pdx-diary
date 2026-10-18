@@ -285,9 +285,9 @@
         data: {
           labels: points.map(xLabel),
           datasets: [
-            { label: '高压 (mmHg)', data: highs, borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            { label: '低压 (mmHg)', data: lows, borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            ...(hasPulse ? [{ label: '心率 (次/分)', data: pulses, borderColor: '#8e24aa', backgroundColor: 'transparent', tension: 0.3, spanGaps: true, yAxisID: 'y1' }] : []),
+            { label: '高压', data: highs, borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
+            { label: '低压', data: lows, borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
+            ...(hasPulse ? [{ label: '心率', data: pulses, borderColor: '#8e24aa', backgroundColor: 'transparent', tension: 0.3, spanGaps: true, yAxisID: 'y1' }] : []),
           ],
         },
         options: {
