@@ -52,7 +52,40 @@
     </div>
 
     <div class="card">
-      <div class="card-head">腹透超滤（按袋记）</div>
+      <div class="card-head">身体不适记录（不舒服时记一下）</div>
+      <form class="entry-form" id="symptomForm">
+        <div class="row">
+          <label>日期<input type="date" id="symDate" required></label>
+          <label>时间<input type="time" id="symTime" required></label>
+        </div>
+        <label>哪里不舒服、什么感觉<input type="text" id="symDesc" placeholder="例如 头晕、恶心、肚子胀" required></label>
+        <label>备注（可选）<textarea id="symNote" rows="2" placeholder="想说点啥就写这里"></textarea></label>
+        <button type="submit" class="btn">保存不适记录</button>
+      </form>
+      <ul class="list" id="symList"></ul>
+    </div>
+  </section>
+
+  <!-- ========== 正在吃的药 ========== -->
+  <section class="page" id="page-meds">
+    <div class="card">
+      <input class="med-title-input" id="medTitleInput" value="我正在吃的药（维护这份清单即可，不用天天记）">
+      <form class="entry-form" id="medForm">
+        <label>药名<input type="text" id="medName" placeholder="例如 百令胶囊" required></label>
+        <label>剂量<input type="text" id="medDose" placeholder="例如 0.5g" required></label>
+        <label>价格（元）<input type="number" id="medPrice" placeholder="例如 45.5" min="0" step="0.01"></label>
+        <label>怎么吃(次数/时间)<input type="text" id="medTimes" placeholder="例如 每次2粒，早晚各1次"></label>
+        <label>药盒封面<input type="file" id="medCover" accept="image/*"></label>
+        <button type="submit" class="btn">＋ 添加药物</button>
+      </form>
+      <ul class="list" id="medList"></ul>
+    </div>
+  </section>
+
+  <!-- ========== 腹透超滤 ========== -->
+  <section class="page" id="page-pd">
+    <div class="card">
+      <div class="card-head">腹透超滤</div>
       <div class="pd-summary">今日合计超滤：<strong id="pdTotalText">0</strong> ml</div>
       <form class="entry-form" id="pdForm">
         <div class="row">
@@ -70,37 +103,6 @@
     </div>
   </section>
 
-  <!-- ========== 正在吃的药 ========== -->
-  <section class="page" id="page-meds">
-    <div class="card">
-      <div class="card-head">我正在吃的药（维护这份清单即可，不用天天记）</div>
-      <form class="entry-form" id="medForm">
-        <label>药名<input type="text" id="medName" placeholder="例如 百令胶囊" required></label>
-        <label>剂量<input type="text" id="medDose" placeholder="例如 0.5g" required></label>
-        <label>怎么吃(次数/时间)<input type="text" id="medTimes" placeholder="例如 每次2粒，早晚各1次"></label>
-        <button type="submit" class="btn">＋ 添加药物</button>
-      </form>
-      <ul class="list" id="medList"></ul>
-    </div>
-  </section>
-
-  <!-- ========== 身体不适 ========== -->
-  <section class="page" id="page-symptoms">
-    <div class="card">
-      <div class="card-head">身体不适记录（不舒服时记一下）</div>
-      <form class="entry-form" id="symptomForm">
-        <div class="row">
-          <label>日期<input type="date" id="symDate" required></label>
-          <label>时间<input type="time" id="symTime" required></label>
-        </div>
-        <label>哪里不舒服、什么感觉<input type="text" id="symDesc" placeholder="例如 头晕、恶心、肚子胀" required></label>
-        <label>备注（可选）<textarea id="symNote" rows="2" placeholder="想说点啥就写这里"></textarea></label>
-        <button type="submit" class="btn">保存不适记录</button>
-      </form>
-      <ul class="list" id="symList"></ul>
-    </div>
-  </section>
-
   <!-- ========== 统计报表 ========== -->
   <section class="page" id="page-stats">
     <div class="card">
@@ -115,6 +117,7 @@
         </label>
         <label>时间范围
           <select id="statRange">
+            <option value="today">当天</option>
             <option value="7">近 7 天</option>
             <option value="30" selected>近 30 天</option>
             <option value="90">近 90 天</option>
@@ -131,7 +134,7 @@
 <nav class="bottom-nav">
   <button class="nav-item active" data-page="daily">记录</button>
   <button class="nav-item" data-page="meds">用药</button>
-  <button class="nav-item" data-page="symptoms">不适</button>
+  <button class="nav-item" data-page="pd">超滤</button>
   <button class="nav-item" data-page="stats">统计</button>
 </nav>
 

@@ -1,6 +1,6 @@
 /**
  * 主逻辑
- * 负责四个功能页的交互：今日记录(血压/体重/腹透)、用药清单、身体不适、统计图表。
+ * 负责四个功能页的交互：今日记录(血压/体重/不适)、用药清单、腹透超滤、统计图表。
  * 所有数据读写都通过 DB（IndexedDB）完成，仅存本机。
  */
 
@@ -68,10 +68,9 @@
   }
 
   async function loadDaily() {
-    const [bp, weight, pd] = await Promise.all([
+    const [bp, weight] = await Promise.all([
       DB.getByDate('bp', TODAY),
       DB.getByDate('weight', TODAY),
-      DB.getByDate('pd', TODAY),
     ]);
 
     bp.sort((a, b) => a.time.localeCompare(b.time));
@@ -91,20 +90,9 @@
       </div>
       <button class="item-del" data-id="${x.id}">删</button>`);
     onDelete($('weightList'), 'weight', loadDaily);
-
-    pd.sort((a, b) => a.time.localeCompare(b.time));
-    const total = pd.reduce((s, x) => s + (x.net ?? 0), 0);
-    $('pdTotalText').textContent = total;
-    renderList($('pdList'), pd, (x) => `
-      <div class="item-main">
-        <div class="item-title">入 ${esc(x.in)} / 出 ${esc(x.out)} ml　超滤 <b>${esc(x.net)}</b> ml</div>
-        <div class="item-sub">${esc(x.time)}</div>
-      </div>
-      <button class="item-del" data-id="${x.id}">删</button>`);
-    onDelete($('pdList'), 'pd', loadDaily);
   }
 
-  // 血压保存
+  // 血压保存后自动刷新列表
   $('bpForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const pulse = $('bpPulse').value;
@@ -115,46 +103,19 @@
     });
     toast('血压已保存');
     $('bpForm').reset(); fillDefaults();
+    loadDaily();
   });
 
-  // 体重保存
+  // 体重保存后自动刷新列表
   $('weightForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     await DB.add('weight', { date: $('weightDate').value, time: $('weightTime')?.value || nowTime(), weight: +$('weightValue').value });
     toast('体重已保存');
     $('weightForm').reset(); fillDefaults();
+    loadDaily();
   });
 
-  // 腹透每袋保存（超滤=出-入，自动算）
-  $('pdForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const inV = +$('pdIn').value, outV = +$('pdOut').value;
-    if (outV < inV && !confirm(`本次出液(${outV}ml)小于入液(${inV}ml)，超滤为负数，确定保存吗？`)) return;
-    await DB.add('pd', { date: $('pdDate').value, time: $('pdTime').value, in: inV, out: outV, net: outV - inV });
-    toast('本袋已保存');
-    $('pdForm').reset(); fillDefaults();
-  });
-
-  // ---- 用药清单 ----
-  async function loadMeds() {
-    const meds = await DB.getAll('meds');
-    renderList($('medList'), meds, (x) => `
-      <div class="item-main">
-        <div class="item-title">${esc(x.name)} <span style="font-weight:normal;color:${esc(x.dose) ? '' : 'var(--muted)'}">${esc(x.dose)}</span></div>
-        <div class="item-sub">${esc(x.times) || '次数待定'}</div>
-      </div>
-      <button class="item-del" data-id="${x.id}">删</button>`);
-    onDelete($('medList'), 'meds', loadMeds);
-  }
-  $('medForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await DB.add('meds', { name: $('medName').value.trim(), dose: $('medDose').value.trim(), times: $('medTimes').value.trim() });
-    toast('已添加药物');
-    $('medForm').reset();
-    loadMeds();
-  });
-
-  // ---- 身体不适 ----
+  // ---- 身体不适（记录页）----
   async function loadSymptoms() {
     const list = await DB.getAll('symptom');
     list.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
@@ -166,12 +127,87 @@
       <button class="item-del" data-id="${x.id}">删</button>`);
     onDelete($('symList'), 'symptom', loadSymptoms);
   }
+  // 保存不适后自动刷新列表
   $('symptomForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     await DB.add('symptom', { date: $('symDate').value, time: $('symTime').value, desc: $('symDesc').value.trim(), note: $('symNote').value.trim() });
     toast('不适已记录');
     $('symptomForm').reset(); fillDefaults();
     $('symNote').value = '';
+    loadSymptoms();
+  });
+
+  // ---- 腹透超滤（独立页）----
+  async function loadPd() {
+    const pd = await DB.getByDate('pd', TODAY);
+    pd.sort((a, b) => a.time.localeCompare(b.time));
+    const total = pd.reduce((s, x) => s + (x.net ?? 0), 0);
+    $('pdTotalText').textContent = total;
+    renderList($('pdList'), pd, (x) => `
+      <div class="item-main">
+        <div class="item-title">入 ${esc(x.in)} / 出 ${esc(x.out)} ml　超滤 <b>${esc(x.net)}</b> ml</div>
+        <div class="item-sub">${esc(x.time)}</div>
+      </div>
+      <button class="item-del" data-id="${x.id}">删</button>`);
+    onDelete($('pdList'), 'pd', loadPd);
+  }
+  // 保存本袋后自动刷新列表与今日合计
+  $('pdForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const inV = +$('pdIn').value, outV = +$('pdOut').value;
+    if (outV < inV && !confirm(`本次出液(${outV}ml)小于入液(${inV}ml)，超滤为负数，确定保存吗？`)) return;
+    await DB.add('pd', { date: $('pdDate').value, time: $('pdTime').value, in: inV, out: outV, net: outV - inV });
+    toast('本袋已保存');
+    $('pdForm').reset(); fillDefaults();
+    loadPd();
+  });
+
+  // ---- 用药清单 ----
+  const MED_TITLE_KEY = 'medTitle';
+  // 用药清单标题可自定义，默认提示文字，用户可改为"降压药""降磷药"等
+  function loadMedTitle() {
+    $('medTitleInput').value = localStorage.getItem(MED_TITLE_KEY) || '我正在吃的药（维护这份清单即可，不用天天记）';
+  }
+  $('medTitleInput').addEventListener('change', () => {
+    const v = $('medTitleInput').value.trim();
+    if (!v) { loadMedTitle(); toast('标题不能为空'); return; }
+    localStorage.setItem(MED_TITLE_KEY, v);
+    toast('标题已更新');
+  });
+
+  async function loadMeds() {
+    const meds = await DB.getAll('meds');
+    renderList($('medList'), meds, (x) => `
+      ${x.cover ? `<div class="item-cover"><img src="${x.cover}" alt="药盒"></div>` : ''}
+      <div class="item-main">
+        <div class="item-title">${esc(x.name)} <span style="font-weight:normal;color:${esc(x.dose) ? '' : 'var(--muted)'}">${esc(x.dose)}</span></div>
+        <div class="item-sub">${esc(x.times) || '次数待定'}${x.price != null && x.price !== '' ? `　｜　价格 ${esc(x.price)} 元` : ''}</div>
+      </div>
+      <button class="item-del" data-id="${x.id}">删</button>`);
+    onDelete($('medList'), 'meds', loadMeds);
+  }
+  $('medForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = $('medCover').files[0];
+    let cover = '';
+    if (file) {
+      cover = await new Promise((resolve) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.readAsDataURL(file);
+      });
+    }
+    const price = $('medPrice').value;
+    await DB.add('meds', {
+      name: $('medName').value.trim(),
+      dose: $('medDose').value.trim(),
+      times: $('medTimes').value.trim(),
+      price: price !== '' ? price : '',
+      cover,
+    });
+    toast('已添加药物');
+    $('medForm').reset();
+    loadMeds();
   });
 
   // ---- 统计报表 ----
@@ -188,8 +224,9 @@
     if (!window.Chart) { $('statNote').textContent = '图表组件未加载，请联网后重试'; return; }
     const metric = $('statMetric').value;
     const range = $('statRange').value;
+    const isToday = range === 'today';
     const all = await DB.getAll(storeOf[metric]);
-    const start = range === 'all' ? null : rangeStart(Number(range));
+    const start = range === 'all' ? null : (isToday ? TODAY : rangeStart(Number(range)));
     const rows = all.filter((r) => !start || r.date >= start);
     rows.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
@@ -197,53 +234,69 @@
     $('statNote').textContent = '';
     const ctx = $('statChart').getContext('2d');
 
+    // x 轴标签：当天显示 时:分；其他范围按 年-月-日，取每日最新一条
+    const xLabel = (r) => (isToday ? r.time : r.date);
+    let points;
+    if (isToday) {
+      points = rows;
+    } else {
+      const byDay = new Map();
+      rows.forEach((r) => byDay.set(r.date, r));
+      points = [...byDay.values()];
+    }
+
     if (metric === 'bp') {
-      if (!rows.length) { $('statNote').textContent = '该范围内暂无血压记录'; return; }
+      if (!points.length) { $('statNote').textContent = '该范围内暂无血压记录'; return; }
+      const hasPulse = points.some((r) => r.pulse != null);
       chart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: rows.map((r) => r.date.slice(5) + ' ' + r.time),
+          labels: points.map(xLabel),
           datasets: [
-            { label: '高压', data: rows.map((r) => r.high), borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            { label: '低压', data: rows.map((r) => r.low), borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            ...(rows.some((r) => r.pulse != null) ? [{ label: '心率', data: rows.map((r) => r.pulse), borderColor: '#8e24aa', backgroundColor: 'transparent', tension: 0.3, spanGaps: true, yAxisID: 'y1' }] : []),
+            { label: '高压 (mmHg)', data: points.map((r) => r.high), borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
+            { label: '低压 (mmHg)', data: points.map((r) => r.low), borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
+            ...(hasPulse ? [{ label: '心率 (次/分)', data: points.map((r) => r.pulse), borderColor: '#8e24aa', backgroundColor: 'transparent', tension: 0.3, spanGaps: true }] : []),
           ],
         },
         options: {
           responsive: true, spanGaps: true,
           scales: {
-            y: { title: { display: true, text: 'mmHg' } },
-            y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: rows.some((r) => r.pulse != null), text: '次/分' } },
-            x: { ticks: { maxTicksLimit: 10, maxRotation: 45 } },
+            y: {},
+            x: { ticks: { maxTicksLimit: isToday ? 12 : 10, maxRotation: 45, autoSkip: true } },
           },
-          plugins: { legend: { labels: { usePointStyle: true } } },
+          plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
         },
       });
     } else if (metric === 'weight') {
-      const map = new Map();
-      rows.forEach((r) => map.set(r.date, r.weight)); // 同一天取最后一条
-      if (!map.size) { $('statNote').textContent = '该范围内暂无体重记录'; return; }
-      const labels = [...map.keys()];
+      if (!points.length) { $('statNote').textContent = '该范围内暂无体重记录'; return; }
       chart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels.map((d) => d.slice(5)),
-          datasets: [{ label: '体重(kg)', data: labels.map((d) => map.get(d)), borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3 }],
+          labels: points.map(xLabel),
+          datasets: [{ label: '体重 (kg)', data: points.map((r) => r.weight), borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true }],
         },
-        options: { responsive: true, spanGaps: true, scales: { y: { title: { display: true, text: 'kg' } } }, plugins: { legend: { display: false } } },
+        options: {
+          responsive: true, spanGaps: true,
+          scales: { y: {}, x: { ticks: { maxTicksLimit: isToday ? 12 : 10, maxRotation: 45, autoSkip: true } } },
+          plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
+        },
       });
     } else { // pd 每日超滤合计
       const map = new Map();
       rows.forEach((r) => map.set(r.date, (map.get(r.date) || 0) + (r.net || 0)));
       if (!map.size) { $('statNote').textContent = '该范围内暂无腹透记录'; return; }
-      const labels = [...map.keys()];
+      const labels = [...map.keys()].sort();
       chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels.map((d) => d.slice(5)),
-          datasets: [{ label: '每日超滤(ml)', data: labels.map((d) => map.get(d)), backgroundColor: '#1e88e5' }],
+          labels,
+          datasets: [{ label: '每日超滤 (ml)', data: labels.map((d) => map.get(d)), backgroundColor: '#1e88e5' }],
         },
-        options: { responsive: true, scales: { y: { title: { display: true, text: 'ml' } } }, plugins: { legend: { display: false } } },
+        options: {
+          responsive: true,
+          scales: { y: {}, x: { ticks: { maxTicksLimit: 10, maxRotation: 45, autoSkip: true } } },
+          plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
+        },
       });
     }
   }
@@ -254,6 +307,8 @@
   // ---- 启动 ----
   fillDefaults();
   loadDaily();
+  loadPd();
   loadMeds();
+  loadMedTitle();
   loadSymptoms();
 })();
