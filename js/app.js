@@ -364,41 +364,39 @@
     $('statTable').innerHTML = '';
     const ctx = $('statChart').getContext('2d');
 
-    // x 轴标签：当天显示 时:分；其他范围按 年-月-日，取每日最新一条
+    // x 轴标签：当天显示 时:分；其他范围按 年-月-日，每天取最早的一条
     const xLabel = (r) => (isToday ? r.time : r.date);
     let points;
     if (isToday) {
       points = rows;
     } else {
+      // 同一天有多条记录时取最早的一条（晨起那次记录最重要）
       const byDay = new Map();
-      rows.forEach((r) => byDay.set(r.date, r));
+      rows.forEach((r) => { if (!byDay.has(r.date)) byDay.set(r.date, r); });
       points = [...byDay.values()];
     }
 
     if (metric === 'bp') {
       if (!points.length) { $('statNote').textContent = '该范围内暂无血压记录'; return; }
-      const hasPulse = points.some((r) => r.pulse != null);
       const highs = points.map((r) => r.high);
       const lows = points.map((r) => r.low);
-      const pulses = hasPulse ? points.map((r) => r.pulse) : [];
-      // 双 y 轴：高压/低压共用左侧 mmHg 轴，心率用右侧 次/分 轴，均按数据范围自动缩放
-      const yScale = autoScale([...highs, ...lows], 10);
-      const y1Scale = hasPulse ? autoScale(pulses, 5) : {};
+      // 双 y 轴：左轴对应高压、右轴对应低压，各自按自身数据范围缩放，凸显两条线的波动
+      const yScale = autoScale(highs, 5);
+      const y1Scale = autoScale(lows, 5);
       chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: points.map(xLabel),
           datasets: [
-            { label: '高压', data: highs, borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            { label: '低压', data: lows, borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true },
-            ...(hasPulse ? [{ label: '心率', data: pulses, borderColor: '#8e24aa', backgroundColor: 'transparent', tension: 0.3, spanGaps: true, yAxisID: 'y1' }] : []),
+            { label: '高压', data: highs, borderColor: '#e53935', backgroundColor: 'transparent', tension: 0.3, spanGaps: true, yAxisID: 'y' },
+            { label: '低压', data: lows, borderColor: '#1e88e5', backgroundColor: 'transparent', tension: 0.3, spanGaps: true, yAxisID: 'y1' },
           ],
         },
         options: {
           responsive: true, spanGaps: true,
           scales: {
-            y: Object.assign({}, yScale),
-            y1: Object.assign({ position: 'right', grid: { drawOnChartArea: false } }, y1Scale),
+            y: Object.assign({ position: 'left', ticks: { color: '#e53935' } }, yScale),
+            y1: Object.assign({ position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#1e88e5' } }, y1Scale),
             x: { ticks: { maxTicksLimit: isToday ? 12 : 10, maxRotation: 45, autoSkip: true } },
           },
           plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
