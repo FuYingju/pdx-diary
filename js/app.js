@@ -344,8 +344,9 @@
   function buildStatTable(rows, fmt) {
     const box = $('statTable');
     if (!rows.length) { box.innerHTML = ''; return; }
+    // 倒序显示：最新的记录排在最上面
     box.innerHTML = '<table class="stat-table"><thead><tr><th>日期时间</th><th>数据</th></tr></thead><tbody>' +
-      rows.map((r) => `<tr><td>${esc(r.date)} ${esc(r.time)}</td><td>${fmt(r)}</td></tr>`).join('') +
+      [...rows].reverse().map((r) => `<tr><td>${esc(r.date)} ${esc(r.time)}</td><td>${fmt(r)}</td></tr>`).join('') +
       '</tbody></table>';
   }
 
@@ -364,8 +365,8 @@
     $('statTable').innerHTML = '';
     const ctx = $('statChart').getContext('2d');
 
-    // x 轴标签：当天显示 时:分；其他范围按 年-月-日，每天取最早的一条
-    const xLabel = (r) => (isToday ? r.time : r.date);
+    // x 轴标签：当天显示 时:分；其他范围显示 月-日，每天取最早的一条
+    const xLabel = (r) => (isToday ? r.time : r.date.slice(5));
     let points;
     if (isToday) {
       points = rows;
@@ -424,12 +425,13 @@
       const map = new Map();
       rows.forEach((r) => map.set(r.date, (map.get(r.date) || 0) + (r.net || 0)));
       if (!map.size) { $('statNote').textContent = '该范围内暂无腹透记录'; return; }
-      const labels = [...map.keys()].sort();
+      // 原始日期用于取数，X 轴显示月-日
+      const dates = [...map.keys()].sort();
       chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels,
-          datasets: [{ label: '每日超滤 (ml)', data: labels.map((d) => map.get(d)), backgroundColor: '#1e88e5' }],
+          labels: dates.map((d) => d.slice(5)),
+          datasets: [{ label: '每日超滤 (ml)', data: dates.map((d) => map.get(d)), backgroundColor: '#1e88e5' }],
         },
         options: {
           responsive: true,
