@@ -1,6 +1,6 @@
 /**
  * 主逻辑
- * 负责三个功能页的交互：今日记录(血压/体重)、用药清单、腹透超滤、统计图表。
+ * 负责四个功能页的交互：记录(血压/体重/腹透超滤)、用药清单、记事本、统计图表。
  * 所有数据读写都通过 DB（IndexedDB）完成，仅存本机。
  */
 
@@ -17,6 +17,10 @@
   // 超滤浓度标识：1.5% 黄色，2.5% 绿色（图表取亮色，文字取深色保证可读）
   const CONC_COLOR = { '1.5': '#f9a825', '2.5': '#43a047' };
   const concClass = (c) => (c === 1.5 ? 'net-15' : c === 2.5 ? 'net-25' : '');
+
+  // 行内操作图标：铅笔=编辑，垃圾桶=删除
+  const ICON_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const ICON_DEL = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
   let toastTimer;
   function toast(msg) {
@@ -36,6 +40,7 @@
     document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + name));
     navItems.forEach((b) => b.classList.toggle('active', b.dataset.page === name));
     if (name === 'stats') renderStat();
+    if (name === 'notes') loadNotes();
   }
   navItems.forEach((b) => b.addEventListener('click', () => switchPage(b.dataset.page)));
 
@@ -85,7 +90,7 @@
         <div class="item-title">${esc(x.high)}/<span class="low">${esc(x.low)}</span> mmHg ${x.pulse != null ? `｜ 心率 ${esc(x.pulse)}` : ''}</div>
         <div class="item-sub">${esc(x.time)}</div>
       </div>
-      <button class="item-del" data-id="${x.id}">删</button>`);
+      <button class="item-del" data-id="${x.id}" aria-label="删除" title="删除">${ICON_DEL}</button>`);
     onDelete($('bpList'), 'bp', loadDaily);
 
     weight.sort((a, b) => a.time.localeCompare(b.time));
@@ -94,7 +99,7 @@
         <div class="item-title">${esc(x.weight)} kg</div>
         <div class="item-sub">${esc(x.time)}</div>
       </div>
-      <button class="item-del" data-id="${x.id}">删</button>`);
+      <button class="item-del" data-id="${x.id}" aria-label="删除" title="删除">${ICON_DEL}</button>`);
     onDelete($('weightList'), 'weight', loadDaily);
   }
 
@@ -138,7 +143,7 @@
         <div class="item-title">入 ${esc(x.in)} / 出 ${esc(x.out)} ml　超滤 <b class="${concClass(x.conc)}">${esc(x.net)}</b> ml</div>
         <div class="item-sub">${esc(x.time)}${x.conc ? '　' + esc(x.conc) + '%' : ''}</div>
       </div>
-      <button class="item-del" data-id="${x.id}">删</button>`);
+      <button class="item-del" data-id="${x.id}" aria-label="删除" title="删除">${ICON_DEL}</button>`);
     onDelete($('pdList'), 'pd', loadPd);
   }
   // 保存本袋后自动刷新列表与今日合计
@@ -207,6 +212,10 @@
   }
 
   $('medBackBtn').addEventListener('click', hideMedDetail);
+
+  // 详情页的编辑/删除按钮用图标
+  $('medEditBtn').innerHTML = ICON_EDIT;
+  $('medDelBtn').innerHTML = ICON_DEL;
 
   // 新增药品：展开/收起添加表单
   $('medAddBtn').addEventListener('click', () => {
@@ -295,6 +304,190 @@
     $('medForm').reset();
     $('medForm').hidden = true;
     loadMeds();
+  });
+
+  // ---- 记事本 ----
+  // 当前筛选的分类 id，null 表示看全部
+  let curCat = null;
+  // 最近一次读取的分类与记事，编辑时直接从这里取原始数据
+  let noteCache = { cats: [], notes: [] };
+
+  const fmtDateTime = (ts) => {
+    const d = new Date(ts);
+    return `${fmtDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  async function loadNotes() {
+    const [cats, notes] = await Promise.all([DB.getAll('noteCats'), DB.getAll('notes')]);
+    cats.sort((a, b) => a.createdAt - b.createdAt);
+    notes.sort((a, b) => b.createdAt - a.createdAt);
+    noteCache = { cats, notes };
+
+    // 分类筛选条：全部 + 各分类
+    $('catBar').innerHTML =
+      `<button class="cat-chip${curCat === null ? ' active' : ''}" data-cat="">全部</button>` +
+      cats.map((c) => `<button class="cat-chip${curCat === c.id ? ' active' : ''}" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
+
+    // 新增记事的分类下拉
+    $('noteCat').innerHTML = cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+
+    // 记事列表：按当前分类筛选，最新的在最上面
+    const list = curCat === null ? notes : notes.filter((n) => n.catId === curCat);
+    const box = $('noteList');
+    if (!list.length) {
+      box.innerHTML = `<div class="empty">${cats.length ? '这个分类下还没有记事' : '还没有分类，先新建一个分类吧'}</div>`;
+      return;
+    }
+    const catName = (id) => (cats.find((c) => c.id === id) || {}).name || '';
+    box.innerHTML = list.map((n) => `
+      <div class="note-card" data-id="${n.id}">
+        <div class="note-head">
+          <div class="note-title">${esc(n.title)}</div>
+          <div class="note-actions">
+            <button class="item-edit" data-id="${n.id}" aria-label="编辑" title="编辑">${ICON_EDIT}</button>
+            <button class="item-del" data-id="${n.id}" aria-label="删除" title="删除">${ICON_DEL}</button>
+          </div>
+        </div>
+        ${n.body ? `<div class="note-body">${esc(n.body)}</div>` : ''}
+        <div class="note-meta"><span class="note-cat">${esc(catName(n.catId))}</span>${esc(fmtDateTime(n.createdAt))}</div>
+      </div>`).join('');
+  }
+
+  // 点击分类只看该类记事
+  $('catBar').addEventListener('click', (e) => {
+    const chip = e.target.closest('.cat-chip');
+    if (!chip) return;
+    curCat = chip.dataset.cat ? Number(chip.dataset.cat) : null;
+    loadNotes();
+  });
+
+  // 删除记事 / 展开编辑表单
+  $('noteList').addEventListener('click', async (e) => {
+    const delBtn = e.target.closest('.item-del');
+    if (delBtn) {
+      if (!confirm('确定删除这条记事吗？')) return;
+      await DB.remove('notes', Number(delBtn.dataset.id));
+      toast('已删除');
+      loadNotes();
+      return;
+    }
+
+    const editBtn = e.target.closest('.item-edit');
+    if (editBtn) startEditNote(Number(editBtn.dataset.id), editBtn.closest('.note-card'));
+  });
+
+  // 编辑：把卡片原地换成表单，分类、标题、正文都可改
+  function startEditNote(id, card) {
+    const n = noteCache.notes.find((x) => x.id === id);
+    if (!n || !card) return;
+    card.outerHTML = `
+      <div class="card">
+        <form class="entry-form note-edit" data-id="${id}">
+          <label>分类<select class="ne-cat">${noteCache.cats.map((c) => `<option value="${c.id}"${c.id === n.catId ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+          <label>标题<input type="text" class="ne-title" value="${esc(n.title)}" required></label>
+          <label>正文<textarea class="ne-body" rows="5">${esc(n.body)}</textarea></label>
+          <div class="med-form-actions">
+            <button type="submit" class="btn">保存</button>
+            <button type="button" class="btn ghost ne-cancel">取消</button>
+          </div>
+        </form>
+      </div>`;
+  }
+
+  // 保存编辑：基于原记录整体覆盖，只改分类、标题、正文
+  $('noteList').addEventListener('submit', async (e) => {
+    const form = e.target.closest('.note-edit');
+    if (!form) return;
+    e.preventDefault();
+    const orig = noteCache.notes.find((x) => x.id === Number(form.dataset.id));
+    await DB.update('notes', {
+      ...orig,
+      catId: Number(form.querySelector('.ne-cat').value),
+      title: form.querySelector('.ne-title').value.trim(),
+      body: form.querySelector('.ne-body').value.trim(),
+    });
+    toast('已保存修改');
+    loadNotes();
+  });
+
+  // 取消编辑：重新渲染卡片
+  $('noteList').addEventListener('click', (e) => {
+    if (e.target.closest('.ne-cancel')) loadNotes();
+  });
+
+  // 新建分类：展开/收起表单
+  $('catAddBtn').addEventListener('click', () => {
+    const f = $('catForm');
+    f.hidden = !f.hidden;
+    if (!f.hidden) $('catName').focus();
+  });
+  $('catCancelBtn').addEventListener('click', () => {
+    $('catForm').reset();
+    $('catForm').hidden = true;
+  });
+  $('catForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await DB.add('noteCats', { name: $('catName').value.trim(), createdAt: Date.now() });
+    toast('分类已新建');
+    $('catForm').reset();
+    $('catForm').hidden = true;
+    loadNotes();
+  });
+
+  // 管理分类：列出全部分类，可删除；有记事的分类不允许删
+  $('catManageBtn').addEventListener('click', () => {
+    const box = $('catManage');
+    box.hidden = !box.hidden;
+    if (!box.hidden) renderCatManage();
+  });
+
+  async function renderCatManage() {
+    const [cats, notes] = await Promise.all([DB.getAll('noteCats'), DB.getAll('notes')]);
+    cats.sort((a, b) => a.createdAt - b.createdAt);
+    const box = $('catManage');
+    if (!cats.length) { box.innerHTML = '<div class="empty">还没有分类</div>'; return; }
+    box.innerHTML = cats.map((c) => {
+      const used = notes.some((n) => n.catId === c.id);
+      return `<div class="cat-manage-row"><span>${esc(c.name)}${used ? '（有记事）' : ''}</span>
+        <button class="item-del cat-del" data-id="${c.id}" ${used ? 'disabled' : ''} aria-label="删除分类" title="删除分类">${ICON_DEL}</button></div>`;
+    }).join('');
+  }
+
+  $('catManage').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.cat-del');
+    if (!btn || btn.disabled) return;
+    if (!confirm('确定删除这个分类吗？')) return;
+    const id = Number(btn.dataset.id);
+    await DB.remove('noteCats', id);
+    if (curCat === id) curCat = null;
+    toast('分类已删除');
+    $('catManage').hidden = true;
+    loadNotes();
+  });
+
+  // 新增记事：还没有分类时先提示建分类
+  $('noteAddBtn').addEventListener('click', () => {
+    if (!$('noteCat').options.length) { toast('请先新建分类'); return; }
+    const f = $('noteForm');
+    f.hidden = !f.hidden;
+    if (!f.hidden) $('noteTitle').focus();
+  });
+  $('noteCancelBtn').addEventListener('click', () => {
+    $('noteForm').reset();
+    $('noteForm').hidden = true;
+  });
+  $('noteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await DB.add('notes', {
+      catId: Number($('noteCat').value),
+      title: $('noteTitle').value.trim(),
+      body: $('noteBody').value.trim(),
+      createdAt: Date.now(),
+    });
+    toast('记事已保存');
+    $('noteForm').reset();
+    $('noteForm').hidden = true;
+    loadNotes();
   });
 
   // ---- 统计报表 ----
@@ -443,4 +636,5 @@
   loadDaily();
   loadPd();
   loadMeds();
+  loadNotes();
 })();

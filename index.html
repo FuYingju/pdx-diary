@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=20261104a">
+<link rel="stylesheet" href="css/style.css?v=20261104e">
 </head>
 <body>
 
@@ -49,6 +49,32 @@
         <button type="submit" class="btn">保存体重</button>
       </form>
       <ul class="list" id="weightList"></ul>
+    </div>
+
+    <div class="card">
+      <div class="card-head">腹透超滤</div>
+      <div class="pd-summary">当日合计超滤：<strong id="pdTotalText">0</strong> ml</div>
+      <form class="entry-form" id="pdForm">
+        <div class="row">
+          <label>日期<input type="date" id="pdDate" required></label>
+          <label>时间<input type="time" id="pdTime" required></label>
+        </div>
+        <div class="row">
+          <label>浓度
+            <select id="pdConc">
+              <option value="1.5">1.5%</option>
+              <option value="2.5">2.5%</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label>入液量<span>ml</span><input type="number" id="pdIn" placeholder="例如 2000" min="0" required></label>
+          <label>出液量<span>ml</span><input type="number" id="pdOut" placeholder="例如 2100" min="0" required></label>
+        </div>
+        <div class="row-note"><span>本袋超滤 = 出液 − 入液，自动计算</span></div>
+        <button type="submit" class="btn">保存本袋</button>
+      </form>
+      <ul class="list" id="pdList"></ul>
     </div>
   </section>
 
@@ -90,39 +116,44 @@
       </form>
       <div class="med-detail-actions">
         <button class="btn ghost" id="medBackBtn">返回</button>
-        <button class="btn ghost" id="medEditBtn">编辑</button>
-        <button class="btn danger" id="medDelBtn">删除</button>
+        <button class="btn ghost icon-btn" id="medEditBtn" aria-label="编辑" title="编辑"></button>
+        <button class="btn danger icon-btn" id="medDelBtn" aria-label="删除" title="删除"></button>
       </div>
     </div>
   </section>
 
-  <!-- ========== 腹透超滤 ========== -->
-  <section class="page" id="page-pd">
+  <!-- ========== 记事本 ========== -->
+  <section class="page" id="page-notes">
     <div class="card">
-      <div class="card-head">腹透超滤</div>
-      <div class="pd-summary">当日合计超滤：<strong id="pdTotalText">0</strong> ml</div>
-      <form class="entry-form" id="pdForm">
-        <div class="row">
-          <label>日期<input type="date" id="pdDate" required></label>
-          <label>时间<input type="time" id="pdTime" required></label>
+      <div class="card-head">记事本</div>
+      <div class="cat-bar" id="catBar"></div>
+      <button class="btn ghost" id="catAddBtn">＋ 新建分类</button>
+      <form class="entry-form" id="catForm" hidden>
+        <label>分类名称<input type="text" id="catName" placeholder="例如 账号密码、重要日期" required></label>
+        <div class="med-form-actions">
+          <button type="submit" class="btn">保存</button>
+          <button type="button" class="btn ghost" id="catCancelBtn">取消</button>
         </div>
-        <div class="row">
-          <label>浓度
-            <select id="pdConc">
-              <option value="1.5">1.5%</option>
-              <option value="2.5">2.5%</option>
-            </select>
-          </label>
-        </div>
-        <div class="row">
-          <label>入液量<span>ml</span><input type="number" id="pdIn" placeholder="例如 2000" min="0" required></label>
-          <label>出液量<span>ml</span><input type="number" id="pdOut" placeholder="例如 2100" min="0" required></label>
-        </div>
-        <div class="row-note"><span>本袋超滤 = 出液 − 入液，自动计算</span></div>
-        <button type="submit" class="btn">保存本袋</button>
       </form>
-      <ul class="list" id="pdList"></ul>
+      <button class="btn ghost" id="catManageBtn">管理分类</button>
+      <div class="cat-manage" id="catManage" hidden></div>
     </div>
+
+    <div class="card">
+      <button class="btn" id="noteAddBtn">＋ 新增记事</button>
+      <form class="entry-form" id="noteForm" hidden>
+        <label>分类<select id="noteCat" required></select></label>
+        <label>标题<input type="text" id="noteTitle" placeholder="例如 银行卡密码" required></label>
+        <label>正文<textarea id="noteBody" rows="5" placeholder="内容写这里，可以换行"></textarea></label>
+        <div class="med-form-actions">
+          <button type="submit" class="btn">保存</button>
+          <button type="button" class="btn ghost" id="noteCancelBtn">取消</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 记事列表：按分类筛选，最新的在最上面 -->
+    <div id="noteList"></div>
   </section>
 
   <!-- ========== 统计报表 ========== -->
@@ -158,15 +189,15 @@
 <nav class="bottom-nav">
   <button class="nav-item active" data-page="daily">记录</button>
   <button class="nav-item" data-page="meds">用药</button>
-  <button class="nav-item" data-page="pd">超滤</button>
+  <button class="nav-item" data-page="notes">记事</button>
   <button class="nav-item" data-page="stats">统计</button>
 </nav>
 
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
-<script src="js/db.js?v=20261104a"></script>
-<script src="js/app.js?v=20261104a"></script>
+<script src="js/db.js?v=20261104e"></script>
+<script src="js/app.js?v=20261104e"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

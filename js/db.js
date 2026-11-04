@@ -1,12 +1,12 @@
 /**
  * 本地数据存储层
- * 负责把血压、体重、腹透超滤、用药等记录，保存到手机浏览器自带的 IndexedDB 中。
+ * 负责把血压、体重、腹透超滤、用药、记事等记录，保存到手机浏览器自带的 IndexedDB 中。
  * 所有数据只存在本机，不联网、不上传。
  */
 
 window.DB = (() => {
   const DB_NAME = 'pdx_diary';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   // 日期索引，用于按天读取记录
   const DATE_KEY = 'by_date';
 
@@ -18,12 +18,21 @@ window.DB = (() => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = (e) => {
         const db = e.target.result;
+        // 版本升级时老表已存在，先判断再创建，避免重复创建报错
         ['bp', 'weight', 'pd'].forEach((name) => {
+          if (db.objectStoreNames.contains(name)) return;
           const store = db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
           store.createIndex(DATE_KEY, 'date', { unique: false });
         });
         // 用药清单无需按索引查询，单独创建
-        db.createObjectStore('meds', { keyPath: 'id', autoIncrement: true });
+        if (!db.objectStoreNames.contains('meds')) {
+          db.createObjectStore('meds', { keyPath: 'id', autoIncrement: true });
+        }
+        // 记事本：noteCats 存分类，notes 存记事内容
+        ['noteCats', 'notes'].forEach((name) => {
+          if (db.objectStoreNames.contains(name)) return;
+          db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
+        });
       };
       req.onsuccess = () => { _db = req.result; resolve(_db); };
       req.onerror = () => reject(req.error);

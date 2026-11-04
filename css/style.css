@@ -132,9 +132,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .item-del {
   border: none; background: none;
   color: var(--danger);
-  font-size: 13px;
-  padding: 6px 8px;
+  padding: 6px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
 }
 .item-del:hover { color: #b71c1c; }
 
@@ -187,7 +189,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .stat-table td:first-child { color: var(--muted); font-size: 13px; }
 
 /* 超滤量按浓度标识：1.5% 黄色，2.5% 绿色 */
-.net-15 { color: #b7791f; font-weight: 600; }
+.net-15 { color: #d59a00; font-weight: 600; }
 .net-25 { color: #2e7d32; font-weight: 600; }
 
 /* 空列表提示 */
@@ -279,9 +281,62 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
   margin-top: 14px;
 }
 .med-detail-actions .btn { margin: 0; flex: 1; }
+/* 只有图标的大按钮：内容居中 */
+.btn.icon-btn { display: flex; align-items: center; justify-content: center; }
 .btn.danger { background: var(--danger); }
 .btn.danger:hover { background: #b71c1c; }
 
 /* 新增药品表单的保存/取消按钮并排 */
 .med-form-actions { display: flex; gap: 10px; margin-top: 4px; }
 .med-form-actions .btn { margin: 0; flex: 1; }
+
+/* 记事本：分类筛选条 */
+.cat-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.cat-chip {
+  border: 1px solid var(--border);
+  background: #fbfcfe;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.cat-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* 记事本：管理分类列表 */
+.cat-manage { margin-top: 4px; }
+.cat-manage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.item-del:disabled { color: var(--muted); cursor: not-allowed; }
+
+/* 记事卡片 */
+.note-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.note-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.note-actions { display: flex; align-items: center; }
+.note-title { font-size: 16px; font-weight: 600; }
+.item-edit {
+  border: none;
+  background: none;
+  color: var(--primary);
+  padding: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+.item-edit:hover { color: var(--primary-dark); }
+.note-body { margin-top: 6px; font-size: 14px; color: #4b5563; white-space: pre-wrap; word-break: break-word; }
+.note-meta { margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.note-cat { background: #e8f3ff; color: var(--primary-dark); border-radius: 999px; padding: 2px 10px; font-size: 12px; }
