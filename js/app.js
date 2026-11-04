@@ -1,6 +1,6 @@
 /**
  * 主逻辑
- * 负责四个功能页的交互：今日记录(血压/体重/不适)、用药清单、腹透超滤、统计图表。
+ * 负责三个功能页的交互：今日记录(血压/体重)、用药清单、腹透超滤、统计图表。
  * 所有数据读写都通过 DB（IndexedDB）完成，仅存本机。
  */
 
@@ -13,6 +13,10 @@
   const todayStr = () => fmtDate(new Date());
   const nowTime = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // 超滤浓度标识：1.5% 黄色，2.5% 绿色（图表取亮色，文字取深色保证可读）
+  const CONC_COLOR = { '1.5': '#f9a825', '2.5': '#43a047' };
+  const concClass = (c) => (c === 1.5 ? 'net-15' : c === 2.5 ? 'net-25' : '');
 
   let toastTimer;
   function toast(msg) {
@@ -64,7 +68,6 @@
     $('bpDate').value = TODAY; $('bpTime').value = nowTime();
     $('weightDate').value = TODAY;
     $('pdDate').value = TODAY; $('pdTime').value = nowTime();
-    $('symDate').value = TODAY; $('symTime').value = nowTime();
   }
 
   async function loadDaily() {
@@ -122,33 +125,6 @@
   $('bpDate').addEventListener('change', loadDaily);
   $('weightDate').addEventListener('change', loadDaily);
 
-  // ---- 身体不适（记录页）----
-  async function loadSymptoms() {
-    // 列表跟随日期选择器：切到哪天就看哪天的记录
-    const d = $('symDate').value || TODAY;
-    const list = await DB.getByDate('symptom', d);
-    list.sort((a, b) => a.time.localeCompare(b.time));
-    renderList($('symList'), list, (x) => `
-      <div class="item-main">
-        <div class="item-title">${esc(x.desc)}</div>
-        <div class="item-sub">${esc(x.date)} ${esc(x.time)}${x.note ? '　' + esc(x.note) : ''}</div>
-      </div>
-      <button class="item-del" data-id="${x.id}">删</button>`);
-    onDelete($('symList'), 'symptom', loadSymptoms);
-  }
-  // 保存不适后自动刷新列表
-  $('symptomForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await DB.add('symptom', { date: $('symDate').value, time: $('symTime').value, desc: $('symDesc').value.trim(), note: $('symNote').value.trim() });
-    toast('不适已记录');
-    $('symptomForm').reset(); fillDefaults();
-    $('symNote').value = '';
-    loadSymptoms();
-  });
-
-  // 切换日期时重新加载对应日期的记录
-  $('symDate').addEventListener('change', loadSymptoms);
-
   // ---- 腹透超滤（独立页）----
   async function loadPd() {
     // 列表与合计跟随日期选择器
@@ -159,8 +135,8 @@
     $('pdTotalText').textContent = total;
     renderList($('pdList'), pd, (x) => `
       <div class="item-main">
-        <div class="item-title">入 ${esc(x.in)} / 出 ${esc(x.out)} ml　超滤 <b>${esc(x.net)}</b> ml</div>
-        <div class="item-sub">${esc(x.time)}</div>
+        <div class="item-title">入 ${esc(x.in)} / 出 ${esc(x.out)} ml　超滤 <b class="${concClass(x.conc)}">${esc(x.net)}</b> ml</div>
+        <div class="item-sub">${esc(x.time)}${x.conc ? '　' + esc(x.conc) + '%' : ''}</div>
       </div>
       <button class="item-del" data-id="${x.id}">删</button>`);
     onDelete($('pdList'), 'pd', loadPd);
@@ -170,7 +146,7 @@
     e.preventDefault();
     const inV = +$('pdIn').value, outV = +$('pdOut').value;
     if (outV < inV && !confirm(`本次出液(${outV}ml)小于入液(${inV}ml)，超滤为负数，确定保存吗？`)) return;
-    await DB.add('pd', { date: $('pdDate').value, time: $('pdTime').value, in: inV, out: outV, net: outV - inV });
+    await DB.add('pd', { date: $('pdDate').value, time: $('pdTime').value, conc: +$('pdConc').value, in: inV, out: outV, net: outV - inV });
     toast('本袋已保存');
     $('pdForm').reset(); fillDefaults();
     loadPd();
@@ -422,25 +398,40 @@
       // 体重明细表
       buildStatTable(rows, (r) => `${esc(r.weight)} kg`);
     } else { // pd 每日超滤合计
+      // 按天汇总，并把超滤量按浓度拆开，便于柱状图分色
       const map = new Map();
-      rows.forEach((r) => map.set(r.date, (map.get(r.date) || 0) + (r.net || 0)));
+      rows.forEach((r) => {
+        const day = map.get(r.date) || { '1.5': 0, '2.5': 0, other: 0 };
+        const key = r.conc === 1.5 ? '1.5' : r.conc === 2.5 ? '2.5' : 'other';
+        day[key] += r.net || 0;
+        map.set(r.date, day);
+      });
       if (!map.size) { $('statNote').textContent = '该范围内暂无腹透记录'; return; }
       // 原始日期用于取数，X 轴显示月-日
       const dates = [...map.keys()].sort();
+      const series = (key) => dates.map((d) => map.get(d)[key]);
+      const datasets = [
+        { label: '1.5% 超滤', data: series('1.5'), backgroundColor: CONC_COLOR['1.5'] },
+        { label: '2.5% 超滤', data: series('2.5'), backgroundColor: CONC_COLOR['2.5'] },
+      ];
+      // 早期记录没有浓度字段，单独一层显示，避免漏算当日总量
+      if (rows.some((r) => r.conc !== 1.5 && r.conc !== 2.5)) {
+        datasets.push({ label: '未标注浓度', data: series('other'), backgroundColor: '#90a4ae' });
+      }
       chart = new Chart(ctx, {
         type: 'bar',
-        data: {
-          labels: dates.map((d) => d.slice(5)),
-          datasets: [{ label: '每日超滤 (ml)', data: dates.map((d) => map.get(d)), backgroundColor: '#1e88e5' }],
-        },
+        data: { labels: dates.map((d) => d.slice(5)), datasets },
         options: {
           responsive: true,
-          scales: { y: {}, x: { ticks: { maxTicksLimit: 10, maxRotation: 45, autoSkip: true } } },
+          scales: {
+            x: { stacked: true, ticks: { maxTicksLimit: 10, maxRotation: 45, autoSkip: true } },
+            y: { stacked: true },
+          },
           plugins: { legend: { labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14 } } },
         },
       });
-      // 超滤明细表：每袋净超滤，正数带 + 号
-      buildStatTable(rows, (r) => `${r.net >= 0 ? '+' : ''}${esc(r.net)} ml`);
+      // 超滤明细表：每袋净超滤，正数带 + 号；数值按浓度着色
+      buildStatTable(rows, (r) => `${r.net >= 0 ? '+' : ''}<span class="${concClass(r.conc)}">${esc(r.net)}</span> ml${r.conc ? `　${esc(r.conc)}%` : ''}`);
     }
   }
 
@@ -452,5 +443,4 @@
   loadDaily();
   loadPd();
   loadMeds();
-  loadSymptoms();
 })();

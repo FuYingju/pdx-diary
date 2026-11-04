@@ -1,6 +1,6 @@
 /**
  * 本地数据存储层
- * 负责把血压、体重、腹透超滤、用药、身体不适等记录，保存到手机浏览器自带的 IndexedDB 中。
+ * 负责把血压、体重、腹透超滤、用药等记录，保存到手机浏览器自带的 IndexedDB 中。
  * 所有数据只存在本机，不联网、不上传。
  */
 
@@ -18,7 +18,7 @@ window.DB = (() => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = (e) => {
         const db = e.target.result;
-        ['bp', 'weight', 'pd', 'symptom'].forEach((name) => {
+        ['bp', 'weight', 'pd'].forEach((name) => {
           const store = db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
           store.createIndex(DATE_KEY, 'date', { unique: false });
         });

@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1e88e5">
-<title>腹膜透析健康日记</title>
+<title>健康日记</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=20261028c">
+<link rel="stylesheet" href="css/style.css?v=20261104a">
 </head>
 <body>
 
 <header class="app-header">
-  <h1 class="app-title">腹膜透析健康日记</h1>
+  <h1 class="app-title">健康日记</h1>
   <div class="app-date" id="todayText"></div>
 </header>
 
@@ -49,20 +49,6 @@
         <button type="submit" class="btn">保存体重</button>
       </form>
       <ul class="list" id="weightList"></ul>
-    </div>
-
-    <div class="card">
-      <div class="card-head">身体不适记录</div>
-      <form class="entry-form" id="symptomForm">
-        <div class="row">
-          <label>日期<input type="date" id="symDate" required></label>
-          <label>时间<input type="time" id="symTime" required></label>
-        </div>
-        <label>哪里不舒服、什么感觉<input type="text" id="symDesc" placeholder="例如 头晕、恶心、肚子胀" required></label>
-        <label>备注（可选）<textarea id="symNote" rows="2" placeholder="想说点啥就写这里"></textarea></label>
-        <button type="submit" class="btn">保存不适记录</button>
-      </form>
-      <ul class="list" id="symList"></ul>
     </div>
   </section>
 
@@ -121,6 +107,14 @@
           <label>时间<input type="time" id="pdTime" required></label>
         </div>
         <div class="row">
+          <label>浓度
+            <select id="pdConc">
+              <option value="1.5">1.5%</option>
+              <option value="2.5">2.5%</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
           <label>入液量<span>ml</span><input type="number" id="pdIn" placeholder="例如 2000" min="0" required></label>
           <label>出液量<span>ml</span><input type="number" id="pdOut" placeholder="例如 2100" min="0" required></label>
         </div>
@@ -171,8 +165,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
-<script src="js/db.js?v=20261028c"></script>
-<script src="js/app.js?v=20261028c"></script>
+<script src="js/db.js?v=20261104a"></script>
+<script src="js/app.js?v=20261104a"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

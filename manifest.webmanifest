@@ -1,6 +1,6 @@
 {
-  "name": "腹膜透析健康日记",
-  "short_name": "腹透日记",
+  "name": "健康日记",
+  "short_name": "健康日记",
   "description": "记录血压、体重、腹透超滤等健康指标并生成趋势报表",
   "start_url": "index.html",
   "display": "standalone",

@@ -1,4 +1,4 @@
-/* ===== 腹膜透析健康日记 全局样式 ===== */
+/* ===== 健康日记 全局样式 ===== */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -185,6 +185,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .stat-table th { color: var(--muted); font-size: 13px; font-weight: 600; position: sticky; top: 0; background: #fff; }
 .stat-table td { color: var(--text); }
 .stat-table td:first-child { color: var(--muted); font-size: 13px; }
+
+/* 超滤量按浓度标识：1.5% 黄色，2.5% 绿色 */
+.net-15 { color: #b7791f; font-weight: 600; }
+.net-25 { color: #2e7d32; font-weight: 600; }
 
 /* 空列表提示 */
 .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 12px 0; }
