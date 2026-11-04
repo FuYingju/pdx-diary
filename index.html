@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=20261104h">
+<link rel="stylesheet" href="css/style.css?v=20261104i">
 </head>
 <body>
 
@@ -127,8 +127,10 @@
     <!-- 分类总览：点某一类进入该类记事 -->
     <div class="card" id="catHome">
       <div class="card-head">记事本</div>
-      <div class="cat-grid" id="catGrid"></div>
-      <button class="btn" id="catAddBtn">＋ 新建分类</button>
+      <div class="cat-actions">
+        <button class="btn" id="catAddBtn">＋ 新建分类</button>
+        <button class="btn ghost" id="catManageBtn">管理分类</button>
+      </div>
       <form class="entry-form" id="catForm" hidden>
         <label>分类名称<input type="text" id="catName" placeholder="例如 账号密码、重要日期" required></label>
         <div class="med-form-actions">
@@ -136,8 +138,8 @@
           <button type="button" class="btn ghost" id="catCancelBtn">取消</button>
         </div>
       </form>
-      <button class="btn ghost" id="catManageBtn">管理分类</button>
       <div class="cat-manage" id="catManage" hidden></div>
+      <div class="cat-grid" id="catGrid"></div>
     </div>
 
     <!-- 某个分类下的记事列表 -->
@@ -202,8 +204,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
-<script src="js/db.js?v=20261104h"></script>
-<script src="js/app.js?v=20261104h"></script>
+<script src="js/db.js?v=20261104i"></script>
+<script src="js/app.js?v=20261104i"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

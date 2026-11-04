@@ -290,22 +290,35 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .med-form-actions { display: flex; gap: 10px; margin-top: 4px; }
 .med-form-actions .btn { margin: 0; flex: 1; }
 
-/* 记事本：分类总览卡片 */
-.cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
+/* 记事本：总览页顶部操作按钮 */
+.cat-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.cat-actions .btn { flex: 1; }
+
+/* 记事本：分类卡片 */
+.cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .cat-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  background: #f7f9fc;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px;
+  gap: 10px;
+  background: #f4f8fd;
+  border: 1px solid #e3ebf5;
+  border-radius: 14px;
+  padding: 14px 14px 12px;
   cursor: pointer;
   text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
+.cat-card:active { background: #e9f2fc; border-color: #cfe0f2; }
 .cat-card-name { font-size: 15px; font-weight: 600; color: var(--text); }
-.cat-card-count { font-size: 12px; color: var(--muted); }
+.cat-card-count {
+  font-size: 12px;
+  color: var(--primary-dark);
+  background: #fff;
+  border: 1px solid #dce8f5;
+  border-radius: 999px;
+  padding: 2px 10px;
+}
 
 /* 记事本：分类内的标题与返回（标题在卡片中水平居中，返回箭头贴左） */
 .note-view-head { position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
