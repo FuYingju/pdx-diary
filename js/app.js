@@ -318,7 +318,7 @@
   };
 
   async function loadNotes() {
-    const [cats, notes] = await Promise.all([DB.getAll('noteCats'), DB.getAll('notes')]);
+    const [cats, notes] = await Promise.all([NoteDB.getAll('noteCats'), NoteDB.getAll('notes')]);
     cats.sort((a, b) => a.createdAt - b.createdAt);
     notes.sort((a, b) => b.createdAt - a.createdAt);
     noteCache = { cats, notes };
@@ -366,7 +366,7 @@
     const delBtn = e.target.closest('.item-del');
     if (delBtn) {
       if (!confirm('确定删除这条记事吗？')) return;
-      await DB.remove('notes', Number(delBtn.dataset.id));
+      await NoteDB.remove('notes', Number(delBtn.dataset.id));
       toast('已删除');
       loadNotes();
       return;
@@ -400,7 +400,7 @@
     if (!form) return;
     e.preventDefault();
     const orig = noteCache.notes.find((x) => x.id === Number(form.dataset.id));
-    await DB.update('notes', {
+    await NoteDB.update('notes', {
       ...orig,
       catId: Number(form.querySelector('.ne-cat').value),
       title: form.querySelector('.ne-title').value.trim(),
@@ -427,7 +427,7 @@
   });
   $('catForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    await DB.add('noteCats', { name: $('catName').value.trim(), createdAt: Date.now() });
+    await NoteDB.add('noteCats', { name: $('catName').value.trim(), createdAt: Date.now() });
     toast('分类已新建');
     $('catForm').reset();
     $('catForm').hidden = true;
@@ -442,7 +442,7 @@
   });
 
   async function renderCatManage() {
-    const [cats, notes] = await Promise.all([DB.getAll('noteCats'), DB.getAll('notes')]);
+    const [cats, notes] = await Promise.all([NoteDB.getAll('noteCats'), NoteDB.getAll('notes')]);
     cats.sort((a, b) => a.createdAt - b.createdAt);
     const box = $('catManage');
     if (!cats.length) { box.innerHTML = '<div class="empty">还没有分类</div>'; return; }
@@ -458,7 +458,7 @@
     if (!btn || btn.disabled) return;
     if (!confirm('确定删除这个分类吗？')) return;
     const id = Number(btn.dataset.id);
-    await DB.remove('noteCats', id);
+    await NoteDB.remove('noteCats', id);
     if (curCat === id) curCat = null;
     toast('分类已删除');
     $('catManage').hidden = true;
@@ -478,7 +478,7 @@
   });
   $('noteForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    await DB.add('notes', {
+    await NoteDB.add('notes', {
       catId: Number($('noteCat').value),
       title: $('noteTitle').value.trim(),
       body: $('noteBody').value.trim(),

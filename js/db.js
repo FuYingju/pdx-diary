@@ -4,100 +4,95 @@
  * 所有数据只存在本机，不联网、不上传。
  */
 
-window.DB = (() => {
-  const DB_NAME = 'pdx_diary';
-  const DB_VERSION = 2;
-  // 日期索引，用于按天读取记录
+(() => {
   const DATE_KEY = 'by_date';
 
-  let _db = null;
+  // 创建一套 IndexedDB 操作接口；库不存在时按 init 建表
+  function createStore(name, init) {
+    let _dbPromise = null;
 
-  // 打开数据库，首次使用会创建表结构和索引
-  function open() {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        // 版本升级时老表已存在，先判断再创建，避免重复创建报错
-        ['bp', 'weight', 'pd'].forEach((name) => {
-          if (db.objectStoreNames.contains(name)) return;
-          const store = db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
-          store.createIndex(DATE_KEY, 'date', { unique: false });
-        });
-        // 用药清单无需按索引查询，单独创建
-        if (!db.objectStoreNames.contains('meds')) {
-          db.createObjectStore('meds', { keyPath: 'id', autoIncrement: true });
-        }
-        // 记事本：noteCats 存分类，notes 存记事内容
-        ['noteCats', 'notes'].forEach((name) => {
-          if (db.objectStoreNames.contains(name)) return;
-          db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
-        });
-      };
-      req.onsuccess = () => { _db = req.result; resolve(_db); };
-      req.onerror = () => reject(req.error);
+    function open() {
+      return new Promise((resolve, reject) => {
+        // 不指定版本号：库已存在时直接打开，不触发升级，避免被旧页面的连接阻塞
+        const req = indexedDB.open(name);
+        req.onupgradeneeded = () => init(req.result);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // 连接只打开一次，并发调用共用同一个 Promise
+    const conn = () => (_dbPromise || (_dbPromise = open()));
+
+    // 写入一条记录
+    async function add(store, obj) {
+      const db = await conn();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readwrite');
+        tx.objectStore(store).add(obj);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // 按 id 删除一条记录
+    async function remove(store, id) {
+      const db = await conn();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readwrite');
+        tx.objectStore(store).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // 按 id 更新一条记录（对象必须带 id 字段，其余字段整体覆盖）
+    async function update(store, obj) {
+      const db = await conn();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(store, 'readwrite');
+        tx.objectStore(store).put(obj);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    // 读取某个表的全部记录（按 id 升序）
+    async function getAll(store) {
+      const db = await conn();
+      return new Promise((resolve, reject) => {
+        const req = db.transaction(store, 'readonly').objectStore(store).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // 读取某一天（date）的记录
+    async function getByDate(store, date) {
+      const db = await conn();
+      return new Promise((resolve, reject) => {
+        const req = db.transaction(store, 'readonly')
+          .objectStore(store).index(DATE_KEY).getAll(date);
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    return { add, update, remove, getAll, getByDate };
+  }
+
+  // 健康记录与用药：沿用原库，老数据保持不动
+  window.DB = createStore('pdx_diary', (db) => {
+    ['bp', 'weight', 'pd'].forEach((name) => {
+      const store = db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
+      store.createIndex(DATE_KEY, 'date', { unique: false });
     });
-  }
+    db.createObjectStore('meds', { keyPath: 'id', autoIncrement: true });
+  });
 
-  // 获取数据库连接单例
-  async function conn() {
-    if (_db) return _db;
-    return open();
-  }
-
-  // 写入一条记录
-  async function add(store, obj) {
-    const db = await conn();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(store, 'readwrite');
-      tx.objectStore(store).add(obj);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  }
-
-  // 按 id 删除一条记录
-  async function remove(store, id) {
-    const db = await conn();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(store, 'readwrite');
-      tx.objectStore(store).delete(id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  }
-
-  // 按 id 更新一条记录（对象必须带 id 字段，其余字段整体覆盖）
-  async function update(store, obj) {
-    const db = await conn();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(store, 'readwrite');
-      tx.objectStore(store).put(obj);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  }
-
-  // 读取某个表的全部记录（按 id 升序）
-  async function getAll(store) {
-    const db = await conn();
-    return new Promise((resolve, reject) => {
-      const req = db.transaction(store, 'readonly').objectStore(store).getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error);
-    });
-  }
-
-  // 读取某一天（date）的记录
-  async function getByDate(store, date) {
-    const db = await conn();
-    return new Promise((resolve, reject) => {
-      const req = db.transaction(store, 'readonly')
-        .objectStore(store).index(DATE_KEY).getAll(date);
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error);
-    });
-  }
-
-  return { add, update, remove, getAll, getByDate };
+  // 记事本：独立库，不牵动主库
+  window.NoteDB = createStore('pdx_diary_notes', (db) => {
+    db.createObjectStore('noteCats', { keyPath: 'id', autoIncrement: true });
+    db.createObjectStore('notes', { keyPath: 'id', autoIncrement: true });
+  });
 })();
