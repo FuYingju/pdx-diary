@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="css/style.css?v=20261104f">
+<link rel="stylesheet" href="css/style.css?v=20261104g">
 </head>
 <body>
 
@@ -124,10 +124,11 @@
 
   <!-- ========== 记事本 ========== -->
   <section class="page" id="page-notes">
-    <div class="card">
+    <!-- 分类总览：点某一类进入该类记事 -->
+    <div class="card" id="catHome">
       <div class="card-head">记事本</div>
-      <div class="cat-bar" id="catBar"></div>
-      <button class="btn ghost" id="catAddBtn">＋ 新建分类</button>
+      <div class="cat-grid" id="catGrid"></div>
+      <button class="btn" id="catAddBtn">＋ 新建分类</button>
       <form class="entry-form" id="catForm" hidden>
         <label>分类名称<input type="text" id="catName" placeholder="例如 账号密码、重要日期" required></label>
         <div class="med-form-actions">
@@ -139,21 +140,26 @@
       <div class="cat-manage" id="catManage" hidden></div>
     </div>
 
-    <div class="card">
-      <button class="btn" id="noteAddBtn">＋ 新增记事</button>
-      <form class="entry-form" id="noteForm" hidden>
-        <label>分类<select id="noteCat" required></select></label>
-        <label>标题<input type="text" id="noteTitle" placeholder="例如 银行卡密码" required></label>
-        <label>正文<textarea id="noteBody" rows="5" placeholder="内容写这里，可以换行"></textarea></label>
-        <div class="med-form-actions">
-          <button type="submit" class="btn">保存</button>
-          <button type="button" class="btn ghost" id="noteCancelBtn">取消</button>
+    <!-- 某个分类下的记事列表 -->
+    <div id="noteView" hidden>
+      <div class="card">
+        <div class="note-view-head">
+          <button class="link-btn" id="noteBackBtn">← 返回分类</button>
+          <span class="note-view-title" id="noteViewTitle"></span>
         </div>
-      </form>
+        <button class="btn" id="noteAddBtn">＋ 新增记事</button>
+        <form class="entry-form" id="noteForm" hidden>
+          <label>分类<select id="noteCat" required><option value="">请选择分类</option></select></label>
+          <label>标题<input type="text" id="noteTitle" placeholder="例如 银行卡密码" required></label>
+          <label>正文<textarea id="noteBody" rows="5" placeholder="内容写这里，可以换行"></textarea></label>
+          <div class="med-form-actions">
+            <button type="submit" class="btn">保存</button>
+            <button type="button" class="btn ghost" id="noteCancelBtn">取消</button>
+          </div>
+        </form>
+      </div>
+      <div id="noteList"></div>
     </div>
-
-    <!-- 记事列表：按分类筛选，最新的在最上面 -->
-    <div id="noteList"></div>
   </section>
 
   <!-- ========== 统计报表 ========== -->
@@ -196,8 +202,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/chart.umd.min.js"></script>
-<script src="js/db.js?v=20261104f"></script>
-<script src="js/app.js?v=20261104f"></script>
+<script src="js/db.js?v=20261104g"></script>
+<script src="js/app.js?v=20261104g"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));

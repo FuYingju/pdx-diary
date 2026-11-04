@@ -290,18 +290,34 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .med-form-actions { display: flex; gap: 10px; margin-top: 4px; }
 .med-form-actions .btn { margin: 0; flex: 1; }
 
-/* 记事本：分类筛选条 */
-.cat-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-.cat-chip {
+/* 记事本：分类总览卡片 */
+.cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
+.cat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: #f7f9fc;
   border: 1px solid var(--border);
-  background: #fbfcfe;
-  color: var(--text);
-  border-radius: 999px;
-  padding: 6px 14px;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.cat-card-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.cat-card-count { font-size: 12px; color: var(--muted); }
+
+/* 记事本：分类内的标题与返回 */
+.note-view-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--primary);
   font-size: 14px;
+  padding: 4px 0;
   cursor: pointer;
 }
-.cat-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.note-view-title { font-size: 16px; font-weight: 600; }
 
 /* 记事本：管理分类列表 */
 .cat-manage { margin-top: 4px; }
@@ -337,6 +353,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
   line-height: 0;
 }
 .item-edit:hover { color: var(--primary-dark); }
-.note-body { margin-top: 6px; font-size: 14px; color: #4b5563; white-space: pre-wrap; word-break: break-word; }
-.note-meta { margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-.note-cat { background: #e8f3ff; color: var(--primary-dark); border-radius: 999px; padding: 2px 10px; font-size: 12px; }
+.note-body {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4b5563;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 3em;
+  overflow: hidden;
+  cursor: pointer;
+}
+.note-body.expanded { max-height: none; }
+.note-meta { margin-top: 8px; font-size: 12px; color: var(--muted); }

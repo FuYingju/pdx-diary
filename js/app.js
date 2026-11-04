@@ -40,7 +40,11 @@
     document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + name));
     navItems.forEach((b) => b.classList.toggle('active', b.dataset.page === name));
     if (name === 'stats') renderStat();
-    if (name === 'notes') loadNotes();
+    if (name === 'notes') {
+      // 每次进入记事页都从分类总览开始
+      curCat = null;
+      loadNotes();
+    }
   }
   navItems.forEach((b) => b.addEventListener('click', () => switchPage(b.dataset.page)));
 
@@ -323,22 +327,35 @@
     notes.sort((a, b) => b.createdAt - a.createdAt);
     noteCache = { cats, notes };
 
-    // 分类筛选条：全部 + 各分类
-    $('catBar').innerHTML =
-      `<button class="cat-chip${curCat === null ? ' active' : ''}" data-cat="">全部</button>` +
-      cats.map((c) => `<button class="cat-chip${curCat === c.id ? ' active' : ''}" data-cat="${c.id}">${esc(c.name)}</button>`).join('');
+    // 新增/编辑记事的分类下拉：首项为占位，必须手动选择
+    $('noteCat').innerHTML = '<option value="">请选择分类</option>' +
+      cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
 
-    // 新增记事的分类下拉
-    $('noteCat').innerHTML = cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
-
-    // 记事列表：按当前分类筛选，最新的在最上面
-    const list = curCat === null ? notes : notes.filter((n) => n.catId === curCat);
-    const box = $('noteList');
-    if (!list.length) {
-      box.innerHTML = `<div class="empty">${cats.length ? '这个分类下还没有记事' : '还没有分类，先新建一个分类吧'}</div>`;
+    // 分类总览：每类一张卡片，显示条数
+    if (curCat === null) {
+      $('catHome').hidden = false;
+      $('noteView').hidden = true;
+      $('catGrid').innerHTML = cats.length
+        ? cats.map((c) => `<button class="cat-card" data-cat="${c.id}">
+            <span class="cat-card-name">${esc(c.name)}</span>
+            <span class="cat-card-count">${notes.filter((n) => n.catId === c.id).length} 条</span>
+          </button>`).join('')
+        : '<div class="empty">还没有分类，先新建一个分类吧</div>';
       return;
     }
-    const catName = (id) => (cats.find((c) => c.id === id) || {}).name || '';
+
+    // 某个分类下的记事列表：最新的在最上面
+    const cat = cats.find((c) => c.id === curCat);
+    $('catHome').hidden = true;
+    $('noteView').hidden = false;
+    $('noteViewTitle').textContent = cat.name;
+
+    const list = notes.filter((n) => n.catId === curCat);
+    const box = $('noteList');
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">这个分类下还没有记事</div>';
+      return;
+    }
     box.innerHTML = list.map((n) => `
       <div class="note-card" data-id="${n.id}">
         <div class="note-head">
@@ -349,15 +366,23 @@
           </div>
         </div>
         ${n.body ? `<div class="note-body">${esc(n.body)}</div>` : ''}
-        <div class="note-meta"><span class="note-cat">${esc(catName(n.catId))}</span>${esc(fmtDateTime(n.createdAt))}</div>
+        <div class="note-meta">${esc(fmtDateTime(n.createdAt))}</div>
       </div>`).join('');
   }
 
-  // 点击分类只看该类记事
-  $('catBar').addEventListener('click', (e) => {
-    const chip = e.target.closest('.cat-chip');
-    if (!chip) return;
-    curCat = chip.dataset.cat ? Number(chip.dataset.cat) : null;
+  // 点分类卡片进入该类记事
+  $('catGrid').addEventListener('click', (e) => {
+    const card = e.target.closest('.cat-card');
+    if (!card) return;
+    curCat = Number(card.dataset.cat);
+    $('noteForm').hidden = true;
+    loadNotes();
+  });
+
+  // 返回分类总览
+  $('noteBackBtn').addEventListener('click', () => {
+    curCat = null;
+    $('noteForm').hidden = true;
     loadNotes();
   });
 
@@ -374,6 +399,10 @@
 
     const editBtn = e.target.closest('.item-edit');
     if (editBtn) startEditNote(Number(editBtn.dataset.id), editBtn.closest('.note-card'));
+
+    // 点正文切换折叠/展开
+    const body = e.target.closest('.note-body');
+    if (body) body.classList.toggle('expanded');
   });
 
   // 编辑：把卡片原地换成表单，分类、标题、正文都可改
@@ -478,8 +507,10 @@
   });
   $('noteForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const catId = Number($('noteCat').value);
+    if (!catId) { toast('请选择分类'); return; }
     await NoteDB.add('notes', {
-      catId: Number($('noteCat').value),
+      catId,
       title: $('noteTitle').value.trim(),
       body: $('noteBody').value.trim(),
       createdAt: Date.now(),
