@@ -307,16 +307,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 .cat-card-name { font-size: 15px; font-weight: 600; color: var(--text); }
 .cat-card-count { font-size: 12px; color: var(--muted); }
 
-/* 记事本：分类内的标题与返回 */
-.note-view-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+/* 记事本：分类内的标题与返回（标题在卡片中水平居中，返回箭头贴左） */
+.note-view-head { position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
 .link-btn {
   border: none;
   background: none;
   color: var(--primary);
-  font-size: 14px;
-  padding: 4px 0;
+  padding: 4px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
 }
+#noteBackBtn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
 .note-view-title { font-size: 16px; font-weight: 600; }
 
 /* 记事本：管理分类列表 */

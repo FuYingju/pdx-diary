@@ -349,6 +349,8 @@
     $('catHome').hidden = true;
     $('noteView').hidden = false;
     $('noteViewTitle').textContent = cat.name;
+    // 新增记事默认选中当前所在的分类
+    $('noteCat').value = String(curCat);
 
     const list = notes.filter((n) => n.catId === curCat);
     const box = $('noteList');
@@ -503,6 +505,8 @@
   });
   $('noteCancelBtn').addEventListener('click', () => {
     $('noteForm').reset();
+    // 取消后分类仍保持为当前所在的分类
+    $('noteCat').value = String(curCat);
     $('noteForm').hidden = true;
   });
   $('noteForm').addEventListener('submit', async (e) => {
